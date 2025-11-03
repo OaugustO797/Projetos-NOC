@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>NOC Checklist - Exportações</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.min.css" integrity="sha512-m3CXp9zD12usYGE3MpLqW2eu7PiCmNtKDI7kRXKuX3sI5Yucs5cjox96D65gis6pZeRAgvIJ5zsxFrxJC5mLXQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            margin: 2rem;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        table {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .historico-section {
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>NOC Checklist</h1>
+        <section class="actions">
+            <button type="button" class="button" onclick="exportCSV(currentRegistros, 'carga_diario_de_bordo')">Exportar CSV</button>
+            <button type="button" class="button" onclick="exportTXT(currentRegistros, 'carga_diario_de_bordo')">Exportar TXT</button>
+            <button type="button" class="button" onclick="exportXLSX(currentRegistros, 'carga_diario_de_bordo')">Exportar XLSX</button>
+        </section>
+
+        <table id="tabela-checklist">
+            <thead>
+                <tr id="tabela-header"></tr>
+            </thead>
+            <tbody id="tabela-body"></tbody>
+        </table>
+
+        <section class="historico-section">
+            <h2>Histórico</h2>
+            <div class="actions">
+                <button type="button" class="button" onclick="exportCSV(historicoRegistros, 'historico_carga_diario_de_bordo')">Exportar Histórico CSV</button>
+                <button type="button" class="button" onclick="exportTXT(historicoRegistros, 'historico_carga_diario_de_bordo')">Exportar Histórico TXT</button>
+                <button type="button" class="button" onclick="exportXLSX(historicoRegistros, 'historico_carga_diario_de_bordo')">Exportar Histórico XLSX</button>
+            </div>
+            <table id="tabela-historico">
+                <thead>
+                    <tr id="tabela-historico-header"></tr>
+                </thead>
+                <tbody id="tabela-historico-body"></tbody>
+            </table>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" integrity="sha512-5x0G6xDpZ/WS+BxSXxo0BPyA1d73S5u/5lMZan3ewF6WELL6i1N2EuNrezYhVVTmqukJp6dVv/wA2wF1rZPULA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-no2cSukG1HsfrN7kYM/qf+oCuWHa3gwxObn2ymlk/wEYBLETymFcpnSUsctNk6heAQ7Ez+KQEiC5EvhczHxV/Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        const cabecalho = [
+            'ID',
+            'Data',
+            'Responsável',
+            'Status',
+            'Observação'
+        ];
+
+        const currentRegistros = gerarRegistros(612);
+        const historicoRegistros = gerarRegistros(178, 9000);
+
+        function gerarRegistros(quantidade, inicio = 1) {
+            const dados = [];
+            for (let i = 0; i < quantidade; i++) {
+                const id = inicio + i;
+                const data = new Date(2024, 0, 1 + (i % 30)).toISOString().split('T')[0];
+                dados.push({
+                    ID: id,
+                    Data: data,
+                    Responsável: `Operador ${((i % 6) + 1).toString().padStart(2, '0')}`,
+                    Status: i % 3 === 0 ? 'Pendente' : 'Concluído',
+                    Observação: `Registro de verificação ${id}`
+                });
+            }
+            return dados;
+        }
+
+        function popularTabela(elementoHeaderId, elementoBodyId, registros) {
+            const cabecalhoRow = document.getElementById(elementoHeaderId);
+            const corpoTabela = document.getElementById(elementoBodyId);
+            cabecalhoRow.innerHTML = '';
+            cabecalho.forEach((coluna) => {
+                const th = document.createElement('th');
+                th.textContent = coluna;
+                cabecalhoRow.appendChild(th);
+            });
+
+            corpoTabela.innerHTML = '';
+            registros.forEach((registro) => {
+                const tr = document.createElement('tr');
+                cabecalho.forEach((coluna) => {
+                    const td = document.createElement('td');
+                    td.textContent = registro[coluna];
+                    tr.appendChild(td);
+                });
+                corpoTabela.appendChild(tr);
+            });
+        }
+
+        popularTabela('tabela-header', 'tabela-body', currentRegistros);
+        popularTabela('tabela-historico-header', 'tabela-historico-body', historicoRegistros);
+
+        function chunkItems(list, size = 256) {
+            const resultado = [];
+            if (!Array.isArray(list) || size <= 0) {
+                return resultado;
+            }
+            for (let i = 0; i < list.length; i += size) {
+                resultado.push(list.slice(i, i + size));
+            }
+            return resultado;
+        }
+
+        function formatarNumeroParte(indice, totalPartes) {
+            const largura = Math.max(2, String(totalPartes).length);
+            return String(indice + 1).padStart(largura, '0');
+        }
+
+        function construirCabecalho(registros) {
+            if (!registros.length) {
+                return [];
+            }
+            const primeiraLinha = registros[0];
+            return Object.keys(primeiraLinha);
+        }
+
+        function gerarCSV(chunk) {
+            const colunas = construirCabecalho(chunk);
+            const linhas = [colunas.join(';')];
+            chunk.forEach((registro) => {
+                const valores = colunas.map((coluna) => {
+                    const valor = registro[coluna] ?? '';
+                    const stringValor = String(valor).replace(/"/g, '""');
+                    if (stringValor.includes(';') || stringValor.includes('\n')) {
+                        return `"${stringValor}"`;
+                    }
+                    return stringValor;
+                });
+                linhas.push(valores.join(';'));
+            });
+            return linhas.join('\n');
+        }
+
+        function gerarTXT(chunk) {
+            const colunas = construirCabecalho(chunk);
+            const linhas = [colunas.join('\t')];
+            chunk.forEach((registro) => {
+                const valores = colunas.map((coluna) => String(registro[coluna] ?? ''));
+                linhas.push(valores.join('\t'));
+            });
+            return linhas.join('\n');
+        }
+
+        function dispararDownload(conteudo, nomeArquivo, tipoMime) {
+            const blob = new Blob([conteudo], { type: tipoMime });
+            saveAs(blob, nomeArquivo);
+        }
+
+        function exportCSV(registros, nomeBase) {
+            const chunks = chunkItems(registros);
+            if (!chunks.length) {
+                return;
+            }
+            const totalPartes = chunks.length;
+            chunks.forEach((chunk, indice) => {
+                const numeroParte = formatarNumeroParte(indice, totalPartes);
+                const nomeArquivo = `${nomeBase}_part${numeroParte}.csv`;
+                const conteudo = gerarCSV(chunk);
+                dispararDownload(conteudo, nomeArquivo, 'text/csv;charset=utf-8;');
+            });
+        }
+
+        function exportTXT(registros, nomeBase) {
+            const chunks = chunkItems(registros);
+            if (!chunks.length) {
+                return;
+            }
+            const totalPartes = chunks.length;
+            chunks.forEach((chunk, indice) => {
+                const numeroParte = formatarNumeroParte(indice, totalPartes);
+                const nomeArquivo = `${nomeBase}_part${numeroParte}.txt`;
+                const conteudo = gerarTXT(chunk);
+                dispararDownload(conteudo, nomeArquivo, 'text/plain;charset=utf-8;');
+            });
+        }
+
+        function exportXLSX(registros, nomeBase) {
+            const chunks = chunkItems(registros);
+            if (!chunks.length) {
+                return;
+            }
+
+            const totalPartes = chunks.length;
+            chunks.forEach((chunk, indice) => {
+                const workbook = XLSX.utils.book_new();
+                const nomePlanilha = `Planilha ${indice + 1}`;
+                const colunas = construirCabecalho(chunk);
+                const sheetData = chunk.map((registro) => {
+                    const linha = {};
+                    colunas.forEach((coluna) => {
+                        linha[coluna] = registro[coluna];
+                    });
+                    return linha;
+                });
+                const worksheet = XLSX.utils.json_to_sheet(sheetData, { header: colunas });
+                const ultimaColuna = XLSX.utils.encode_col(colunas.length - 1);
+                const ultimaLinha = chunk.length + 1;
+                worksheet['!autofilter'] = { ref: `A1:${ultimaColuna}${ultimaLinha}` };
+                XLSX.utils.book_append_sheet(workbook, worksheet, nomePlanilha);
+
+                const numeroParte = formatarNumeroParte(indice, totalPartes);
+                const nomeArquivo = `${nomeBase}_part${numeroParte}.xlsx`;
+                XLSX.writeFile(workbook, nomeArquivo);
+            });
+        }
+    </script>
+</body>
+</html>
