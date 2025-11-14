@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOC Formatter</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1120;
+      --surface: #1f2937;
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --danger: #f97316;
+      font-size: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      color: var(--text);
+      font-family: "Segoe UI", "Helvetica Neue", Roboto, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 2vw + 1rem, 2.5rem);
+      margin-bottom: 0.25rem;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+    }
+
+    .wrapper {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--text);
+      resize: vertical;
+      font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.1);
+    }
+
+    textarea:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 0;
+    }
+
+    pre {
+      width: 100%;
+      min-height: 220px;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.75);
+      color: var(--text);
+      font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 999px;
+      padding: 0.75rem 1.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.85), rgba(14, 165, 233, 0.95));
+      box-shadow: 0 10px 25px rgba(8, 145, 178, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(14, 165, 233, 0.4);
+      background: linear-gradient(135deg, var(--accent-hover), rgba(56, 189, 248, 0.95));
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.secondary {
+      background: linear-gradient(135deg, rgba(129, 140, 248, 0.75), rgba(59, 130, 246, 0.85));
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+    }
+
+    button.ghost {
+      background: linear-gradient(135deg, rgba(100, 116, 139, 0.7), rgba(71, 85, 105, 0.8));
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, rgba(251, 146, 60, 0.85), rgba(249, 115, 22, 0.9));
+      box-shadow: 0 10px 24px rgba(249, 115, 22, 0.35);
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 720px) {
+      .wrapper {
+        padding: 2rem 1rem 2.5rem;
+      }
+
+      textarea,
+      pre {
+        min-height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrapper">
+    <header>
+      <h1>NOC Formatter</h1>
+      <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
+    </header>
+
+    <section class="panel">
+      <label for="in">Entrada bruta</label>
+      <textarea id="in" placeholder="Cole aqui os registros brutos do plantão..."></textarea>
+    </section>
+
+    <div class="actions">
+      <button type="button" onclick="formatar()">Formatar</button>
+      <button type="button" class="secondary" onclick="copiar()">Copiar Lista</button>
+      <button type="button" class="ghost" onclick="limpar()">Limpar Lista</button>
+      <button type="button" class="danger" onclick="exportarCSV()">Exportar em CSV</button>
+    </div>
+
+    <section class="panel">
+      <label for="out">Saída formatada</label>
+      <pre id="out"></pre>
+    </section>
+  </main>
+
+  <script>
+    const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
+    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
+
+    function formatar() {
+      const input = document.getElementById('in').value.split(/\r?\n/);
+      const output = [];
+      let currentDate = '';
+      let lastTimeMinutes = null;
+      let lastHour = null;
+
+      for (const rawLine of input) {
+        const line = rawLine.trim();
+        if (!line) {
+          continue;
+        }
+
+        if (dateRegex.test(line)) {
+          currentDate = line;
+          lastTimeMinutes = null;
+          lastHour = null;
+          output.push(line);
+          continue;
+        }
+
+        const match = line.match(eventRegex);
+        if (match) {
+          const [, rawTime, rawService, rawCompanies, rawStatus] = match;
+          const time = normalizeTime(rawTime);
+          const [hour, minutes] = time.split(':').map(Number);
+          const currentMinutes = hour * 60 + minutes;
+
+          if (currentDate && lastTimeMinutes !== null) {
+            if (currentMinutes < lastTimeMinutes && lastHour !== null && lastHour >= 18 && hour <= 6) {
+              currentDate = incDate(currentDate);
+              output.push(currentDate);
+              lastTimeMinutes = null;
+              lastHour = null;
+            }
+          }
+
+          const service = rawService.trim().toUpperCase();
+          const companies = rawCompanies.split(/\s*,\s*/).map((c) => c.toUpperCase()).filter(Boolean);
+          const status = normalizeStatus(rawStatus);
+
+          for (const company of companies) {
+            output.push(`${time}, ${service}, ${company}, ${status}`);
+          }
+
+          lastTimeMinutes = currentMinutes;
+          lastHour = hour;
+          continue;
+        }
+
+        output.push(line);
+      }
+
+      document.getElementById('out').textContent = output.join('\n');
+    }
+
+    function normalizeTime(value) {
+      const match = value.trim().toLowerCase().match(/^(\d{1,2})[:h](\d{2})h?$/);
+      if (!match) {
+        return value.trim();
+      }
+      let [_, hh, mm] = match;
+      const hour = String(Number(hh)).padStart(2, '0');
+      return `${hour}:${mm}`;
+    }
+
+    function normalizeStatus(value) {
+      let text = value.trim();
+      const base = stripAccents(text).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!]+$/, '');
+      const negativeOptions = new Set([
+        'sem atuacao',
+        'servico em execucao'
+      ]);
+      const positiveOptions = new Set([
+        'necessario execucao do servico',
+        'necessario atuacao',
+        'necessario a execucao',
+        'necessario a execucao do servico'
+      ]);
+
+      if (negativeOptions.has(base)) {
+        return 'NÃO';
+      }
+      if (positiveOptions.has(base)) {
+        return 'SIM';
+      }
+
+      if (!/[.!?]$/.test(text)) {
+        text += '.';
+      }
+      return text;
+    }
+
+    function stripAccents(text) {
+      return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function incDate(dateStr) {
+      const parts = dateStr.split('/').map(Number);
+      if (parts.length !== 3 || parts.some(Number.isNaN)) {
+        return dateStr;
+      }
+      const [day, month, year] = parts;
+      const date = new Date(year, month - 1, day);
+      date.setDate(date.getDate() + 1);
+      const nextDay = String(date.getDate()).padStart(2, '0');
+      const nextMonth = String(date.getMonth() + 1).padStart(2, '0');
+      const nextYear = date.getFullYear();
+      return `${nextDay}/${nextMonth}/${nextYear}`;
+    }
+
+    async function copiar() {
+      const text = document.getElementById('out').textContent;
+      if (!text) {
+        alert('Não há conteúdo para copiar.');
+        return;
+      }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          throw new Error('Clipboard API indisponível');
+        }
+        alert('Lista copiada para a área de transferência!');
+      } catch (err) {
+        try {
+          const temp = document.createElement('textarea');
+          temp.value = text;
+          temp.setAttribute('readonly', '');
+          temp.style.position = 'fixed';
+          temp.style.opacity = '0';
+          document.body.appendChild(temp);
+          temp.select();
+          const successful = document.execCommand('copy');
+          document.body.removeChild(temp);
+          if (successful) {
+            alert('Lista copiada para a área de transferência!');
+            return;
+          }
+          throw new Error('Falha ao copiar');
+        } catch (fallbackError) {
+          alert('Não foi possível copiar automaticamente. Copie manualmente.');
+        }
+      }
+    }
+
+    function limpar() {
+      document.getElementById('in').value = '';
+      document.getElementById('out').textContent = '';
+      document.getElementById('in').focus();
+    }
+
+    function exportarCSV() {
+      const output = document.getElementById('out').textContent.trim();
+      if (!output) {
+        alert('Não há conteúdo formatado para exportar.');
+        return;
+      }
+      const lines = output.split(/\n/);
+      const rows = [];
+      let currentDate = '';
+      const lineRegex = /^(\d{2}:\d{2}),\s([^,]+),\s([A-Z]{3}),\s(.+)$/;
+
+      for (const line of lines) {
+        if (dateRegex.test(line)) {
+          currentDate = line;
+          continue;
+        }
+        const match = line.match(lineRegex);
+        if (match && currentDate) {
+          const [, time, service, company, status] = match;
+          rows.push([currentDate, time, service.trim(), company.trim(), status.trim()]);
+        }
+      }
+
+      if (rows.length === 0) {
+        alert('Não há linhas válidas para exportar.');
+        return;
+      }
+
+      const header = ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'];
+      const csvLines = [header.map(escapeCSV).join(',')];
+
+      rows.forEach((row, index) => {
+        if (index > 0 && index % 256 === 0) {
+          csvLines.push('');
+          csvLines.push(header.map(escapeCSV).join(','));
+        }
+        csvLines.push(row.map(escapeCSV).join(','));
+      });
+
+      const blob = new Blob([csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+      link.href = url;
+      link.download = `noc-formatter-${timestamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeCSV(value) {
+      const stringValue = String(value ?? '');
+      if (/[",\n]/.test(stringValue)) {
+        return '"' + stringValue.replace(/"/g, '""') + '"';
+      }
+      return stringValue;
+    }
+  </script>
+</body>
+</html>
