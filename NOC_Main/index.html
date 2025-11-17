@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-5fQZ4MJqQms1UEWhIaU9HS7UQGnd1ohIpJUd0YbX2rY8CibW47CVxItXx1+8QV+3z1l8pKMiI8hI+q0HRN6Ehw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-5fQZ4MJqQms1UEWhIaU9HS7UQGnd1ohIpJUd0YbX2rY8CibW47CVxItXx1+8QV+3z1l8pKMiI8hI+q0HRN6Ehw==" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="window.__xlsxFailed = true"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -353,17 +353,51 @@
         return;
       }
 
+      if (window.XLSX && !window.__xlsxFailed) {
+        const data = [
+          ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
+          ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+        ];
+
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+
+        const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+        XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+        return;
+      }
+
+      exportarCSV();
+    }
+
+    function exportarCSV() {
       const data = [
         ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
         ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
       ];
 
-      const worksheet = XLSX.utils.aoa_to_sheet(data);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
-
+      const csv = data.map((row) => row.map(escaparCSV).join(';')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
       const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-      XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+      link.download = `noc-formatter-${timestamp}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      const offlineMessage = window.__xlsxFailed || !window.XLSX ? '\nA biblioteca XLSX não pôde ser carregada; o arquivo foi exportado como CSV.' : '';
+      alert(`Exportação concluída.${offlineMessage}`);
+    }
+
+    function escaparCSV(valor) {
+      const text = String(valor ?? '');
+      if (/[";\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
     }
   </script>
 </body>
