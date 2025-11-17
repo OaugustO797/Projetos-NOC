@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-5fQZ4MJqQms1UEWhIaU9HS7UQGnd1ohIpJUd0YbX2rY8CibW47CVxItXx1+8QV+3z1l8pKMiI8hI+q0HRN6Ehw==" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="window.__xlsxFailed = true"></script>
   <style>
     :root {
       color-scheme: dark;
@@ -176,7 +177,7 @@
       <button type="button" onclick="formatar()">Formatar</button>
       <button type="button" class="secondary" onclick="copiar()">Copiar Lista</button>
       <button type="button" class="ghost" onclick="limpar()">Limpar Lista</button>
-      <button type="button" class="danger" onclick="exportarCSV()">Exportar em CSV</button>
+      <button type="button" class="danger" onclick="exportarXLSX()">Exportar em XLSX</button>
     </div>
 
     <section class="panel">
@@ -188,6 +189,7 @@
   <script>
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
     const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
+    let formattedRows = [];
 
     function formatar() {
       const input = document.getElementById('in').value.split(/\r?\n/);
@@ -195,6 +197,7 @@
       let currentDate = '';
       let lastTimeMinutes = null;
       let lastHour = null;
+      formattedRows = [];
 
       for (const rawLine of input) {
         const line = rawLine.trim();
@@ -231,7 +234,10 @@
           const status = normalizeStatus(rawStatus);
 
           for (const company of companies) {
-            output.push(`${time}, ${service}, ${company}, ${status}`);
+            output.push(`${time} - ${service} - ${company} - ${status}`);
+            if (currentDate) {
+              formattedRows.push({ date: currentDate, time, service, company, status });
+            }
           }
 
           lastTimeMinutes = currentMinutes;
@@ -341,63 +347,57 @@
       document.getElementById('in').focus();
     }
 
-    function exportarCSV() {
-      const output = document.getElementById('out').textContent.trim();
-      if (!output) {
+    function exportarXLSX() {
+      if (!formattedRows.length) {
         alert('Não há conteúdo formatado para exportar.');
         return;
       }
-      const lines = output.split(/\n/);
-      const rows = [];
-      let currentDate = '';
-      const lineRegex = /^(\d{2}:\d{2}),\s([^,]+),\s([A-Z]{3}),\s(.+)$/;
 
-      for (const line of lines) {
-        if (dateRegex.test(line)) {
-          currentDate = line;
-          continue;
-        }
-        const match = line.match(lineRegex);
-        if (match && currentDate) {
-          const [, time, service, company, status] = match;
-          rows.push([currentDate, time, service.trim(), company.trim(), status.trim()]);
-        }
-      }
+      if (window.XLSX && !window.__xlsxFailed) {
+        const data = [
+          ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
+          ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+        ];
 
-      if (rows.length === 0) {
-        alert('Não há linhas válidas para exportar.');
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+
+        const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+        XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
         return;
       }
 
-      const header = ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'];
-      const csvLines = [header.map(escapeCSV).join(',')];
+      exportarCSV();
+    }
 
-      rows.forEach((row, index) => {
-        if (index > 0 && index % 256 === 0) {
-          csvLines.push('');
-          csvLines.push(header.map(escapeCSV).join(','));
-        }
-        csvLines.push(row.map(escapeCSV).join(','));
-      });
+    function exportarCSV() {
+      const data = [
+        ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
+        ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+      ];
 
-      const blob = new Blob([csvLines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
+      const csv = data.map((row) => row.map(escaparCSV).join(';')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
       const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-      link.href = url;
       link.download = `noc-formatter-${timestamp}.csv`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(link.href);
+
+      const offlineMessage = window.__xlsxFailed || !window.XLSX ? '\nA biblioteca XLSX não pôde ser carregada; o arquivo foi exportado como CSV.' : '';
+      alert(`Exportação concluída.${offlineMessage}`);
     }
 
-    function escapeCSV(value) {
-      const stringValue = String(value ?? '');
-      if (/[",\n]/.test(stringValue)) {
-        return '"' + stringValue.replace(/"/g, '""') + '"';
+    function escaparCSV(valor) {
+      const text = String(valor ?? '');
+      if (/[";\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
       }
-      return stringValue;
+      return text;
     }
   </script>
 </body>
