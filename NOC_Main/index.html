@@ -10,13 +10,61 @@
       color-scheme: dark;
       --bg: #0b1120;
       --surface: #1f2937;
+      --surface-strong: rgba(15, 23, 42, 0.9);
       --border: #334155;
       --text: #e2e8f0;
       --text-muted: #94a3b8;
       --accent: #38bdf8;
       --accent-hover: #0ea5e9;
       --danger: #f97316;
+      --bg-gradient: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      --matrix-overlay: none;
       font-size: 16px;
+    }
+
+    body.theme-default {
+      color-scheme: dark;
+      --bg: #0b1120;
+      --surface: #1f2937;
+      --surface-strong: rgba(15, 23, 42, 0.9);
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --danger: #f97316;
+      --bg-gradient: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      --matrix-overlay: none;
+    }
+
+    body.theme-light {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-strong: rgba(255, 255, 255, 0.9);
+      --border: #d4d4d8;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --danger: #e11d48;
+      --bg-gradient: radial-gradient(circle at top, rgba(226, 232, 240, 0.9), var(--bg));
+      --matrix-overlay: none;
+    }
+
+    body.theme-hacker {
+      color-scheme: dark;
+      --bg: #020c0a;
+      --surface: rgba(4, 15, 12, 0.85);
+      --surface-strong: rgba(4, 15, 12, 0.95);
+      --border: #134e4a;
+      --text: #d1fae5;
+      --text-muted: #34d399;
+      --accent: #22c55e;
+      --accent-hover: #16a34a;
+      --danger: #f97316;
+      --bg-gradient: radial-gradient(circle at 20% 20%, rgba(15, 118, 110, 0.35), #020c0a 65%);
+      --matrix-overlay: repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0, rgba(34, 197, 94, 0.08) 2px, transparent 2px, transparent 4px);
     }
 
     * {
@@ -25,16 +73,31 @@
 
     body {
       margin: 0;
-      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      background: var(--bg-gradient);
       color: var(--text);
       font-family: "Segoe UI", "Helvetica Neue", Roboto, sans-serif;
       line-height: 1.5;
       min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: var(--matrix-overlay);
+      background-size: 100% 24px;
+      opacity: 0.5;
+      pointer-events: none;
+      animation: matrixFall 18s linear infinite;
+      mix-blend-mode: screen;
+      z-index: 0;
     }
 
     h1 {
       font-size: clamp(1.5rem, 2vw + 1rem, 2.5rem);
-      margin-bottom: 0.25rem;
+      margin: 0;
       text-align: center;
       letter-spacing: 0.04em;
     }
@@ -42,16 +105,183 @@
     .subtitle {
       text-align: center;
       color: var(--text-muted);
-      margin-bottom: 2rem;
+      margin: 0;
     }
 
     .wrapper {
+      position: relative;
       max-width: 1080px;
       margin: 0 auto;
       padding: 2.5rem 1.5rem 3rem;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      position: sticky;
+      top: 1rem;
+      backdrop-filter: blur(10px);
+      z-index: 2;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      align-items: center;
+      text-align: center;
+      flex: 1;
+    }
+
+    .menu-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
+      background: linear-gradient(145deg, rgba(56, 189, 248, 0.18), rgba(14, 165, 233, 0.12));
+      color: var(--text);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .menu-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(14, 165, 233, 0.3);
+    }
+
+    .menu-toggle:active {
+      transform: translateY(1px);
+    }
+
+    .menu-drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      width: min(380px, 90vw);
+      background: var(--surface-strong);
+      border-left: 1px solid var(--border);
+      box-shadow: -24px 0 40px rgba(0, 0, 0, 0.25);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.25rem 1.25rem 1.5rem;
+      z-index: 5;
+      overflow-y: auto;
+      backdrop-filter: blur(10px);
+    }
+
+    .menu-drawer.open {
+      transform: translateX(0);
+    }
+
+    .menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 4;
+    }
+
+    .menu-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .menu-title {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .menu-close {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 0.75rem;
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+    }
+
+    .menu-section {
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1rem;
+      background: var(--surface);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .menu-section h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+    }
+
+    .menu-section p {
+      margin: 0 0 0.85rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .theme-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .theme-button {
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      border-radius: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      display: grid;
+      gap: 0.15rem;
+      transition: border-color 0.2s ease, transform 0.12s ease;
+    }
+
+    .theme-button span {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .theme-button.active {
+      border-color: var(--accent);
+      box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.35rem 0 1rem;
+      opacity: 0.8;
     }
 
     label {
@@ -66,10 +296,10 @@
       padding: 0.85rem 1rem;
       border-radius: 0.75rem;
       border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.6);
+      background: var(--surface);
       color: var(--text);
       font-size: 0.95rem;
-      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.06);
+      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.04);
     }
 
     input[type="text"]:focus {
@@ -83,13 +313,13 @@
       padding: 1rem;
       border-radius: 0.75rem;
       border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.6);
+      background: var(--surface);
       color: var(--text);
       resize: vertical;
       font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
       font-size: 0.95rem;
       line-height: 1.6;
-      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.1);
+      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.08);
     }
 
     textarea:focus {
@@ -103,7 +333,7 @@
       padding: 1rem;
       border-radius: 0.75rem;
       border: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.75);
+      background: var(--surface);
       color: var(--text);
       font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
       font-size: 0.95rem;
@@ -184,7 +414,7 @@
       padding: 0.75rem;
       border: 1px solid var(--border);
       border-radius: 0.75rem;
-      background: rgba(15, 23, 42, 0.5);
+      background: var(--surface);
     }
 
     .rule-item {
@@ -194,7 +424,7 @@
       gap: 0.5rem;
       padding: 0.5rem 0.75rem;
       border-radius: 0.5rem;
-      background: rgba(148, 163, 184, 0.08);
+      background: rgba(148, 163, 184, 0.12);
     }
 
     .rule-texts {
@@ -226,9 +456,23 @@
       font-size: 0.9rem;
     }
 
+    .menu-note {
+      text-align: center;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 0.85rem;
+      padding: 0.9rem 1rem;
+    }
+
     @media (max-width: 720px) {
       .wrapper {
         padding: 2rem 1rem 2.5rem;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0.75rem;
       }
 
       textarea,
@@ -236,29 +480,47 @@
         min-height: 180px;
       }
     }
+
+    @keyframes matrixFall {
+      0% {
+        background-position-y: 0;
+      }
+      100% {
+        background-position-y: 200px;
+      }
+    }
   </style>
 </head>
 <body>
-  <main class="wrapper">
-    <header>
-      <h1>NOC Formatter</h1>
-      <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
-    </header>
-
-    <section class="panel">
-      <label for="in">Entrada bruta</label>
-      <textarea id="in" placeholder="Cole aqui os registros brutos do plantão..."></textarea>
-    </section>
-
-    <div class="actions">
-      <button type="button" onclick="formatar()">Formatar</button>
-      <button type="button" class="secondary" onclick="copiar()">Copiar Lista</button>
-      <button type="button" class="ghost" onclick="limpar()">Limpar Lista</button>
-      <button type="button" class="danger" onclick="exportarXLSX()">Exportar em XLSX</button>
+  <div id="menuOverlay" class="menu-overlay" onclick="fecharMenu()"></div>
+  <aside id="menuDrawer" class="menu-drawer" aria-label="Menu lateral">
+    <div class="menu-header">
+      <h2 class="menu-title">Painel</h2>
+      <button class="menu-close" onclick="fecharMenu()" aria-label="Fechar menu">✕</button>
     </div>
-
-    <section class="panel">
-      <label>Regras personalizadas</label>
+    <section class="menu-section">
+      <h2>Temas</h2>
+      <p>Escolha o visual da aplicação. A seleção será lembrada no próximo acesso.</p>
+      <div class="theme-options">
+        <button class="theme-button active" data-theme="default" onclick="selecionarTema('default')">
+          <strong>Padrão</strong>
+          <span>Gradiente escuro</span>
+        </button>
+        <button class="theme-button" data-theme="light" onclick="selecionarTema('light')">
+          <strong>Claro</strong>
+          <span>Interfaces leves</span>
+        </button>
+        <button class="theme-button" data-theme="hacker" onclick="selecionarTema('hacker')">
+          <strong>Hacker</strong>
+          <span>Preto e verde</span>
+        </button>
+      </div>
+    </section>
+    <section class="menu-section">
+      <div class="menu-section-header">
+        <h2>Regras personalizadas</h2>
+        <p>Adicione, edite ou remova as regras que complementam os formatos padrão.</p>
+      </div>
       <div class="rules-grid">
         <div>
           <label for="ruleMatch">Texto a detectar</label>
@@ -275,6 +537,30 @@
       </div>
       <div id="rulesList" class="rules-list"></div>
     </section>
+  </aside>
+
+  <main class="wrapper">
+    <div class="topbar">
+      <button class="menu-toggle" id="menuButton" aria-label="Abrir menu" onclick="abrirMenu()">☰</button>
+      <div class="brand">
+        <h1>NOC Formatter</h1>
+        <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
+      </div>
+    </div>
+
+    <p class="menu-note">Acesse o menu (☰) para gerenciar os temas e as regras personalizadas.</p>
+
+    <section class="panel">
+      <label for="in">Entrada bruta</label>
+      <textarea id="in" placeholder="Cole aqui os registros brutos do plantão..."></textarea>
+    </section>
+
+    <div class="actions">
+      <button type="button" onclick="formatar()">Formatar</button>
+      <button type="button" class="secondary" onclick="copiar()">Copiar Lista</button>
+      <button type="button" class="ghost" onclick="limpar()">Limpar Lista</button>
+      <button type="button" class="danger" onclick="exportarXLSX()">Exportar em XLSX</button>
+    </div>
 
     <section class="panel">
       <label for="out">Saída formatada</label>
@@ -283,6 +569,7 @@
   </main>
 
   <script>
+    const THEME_KEY = 'nocFormatterTheme';
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
     const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
@@ -299,9 +586,51 @@
     let editingIndex = null;
 
     document.addEventListener('DOMContentLoaded', () => {
+      restaurarTema();
       carregarRegras();
       renderizarRegras();
+      atualizarBotoesTema();
     });
+
+    function abrirMenu() {
+      document.getElementById('menuDrawer').classList.add('open');
+      document.getElementById('menuOverlay').classList.add('visible');
+    }
+
+    function fecharMenu() {
+      document.getElementById('menuDrawer').classList.remove('open');
+      document.getElementById('menuOverlay').classList.remove('visible');
+    }
+
+    function selecionarTema(theme) {
+      aplicarTema(theme);
+      fecharMenu();
+    }
+
+    function aplicarTema(theme) {
+      const themes = ['default', 'light', 'hacker'];
+      if (!themes.includes(theme)) {
+        theme = 'default';
+      }
+      document.body.classList.remove(...themes.map((t) => `theme-${t}`));
+      document.body.classList.add(`theme-${theme}`);
+      document.documentElement.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, theme);
+      atualizarBotoesTema(theme);
+    }
+
+    function atualizarBotoesTema(activeTheme = localStorage.getItem(THEME_KEY) || 'default') {
+      const buttons = document.querySelectorAll('.theme-button');
+      buttons.forEach((button) => {
+        const theme = button.getAttribute('data-theme');
+        button.classList.toggle('active', theme === activeTheme);
+      });
+    }
+
+    function restaurarTema() {
+      const saved = localStorage.getItem(THEME_KEY) || 'default';
+      aplicarTema(saved);
+    }
 
     function formatar() {
       const input = document.getElementById('in').value.split(/\r?\n/);
