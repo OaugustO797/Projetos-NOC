@@ -4,7 +4,43 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-5fQZ4MJqQms1UEWhIaU9HS7UQGnd1ohIpJUd0YbX2rY8CibW47CVxItXx1+8QV+3z1l8pKMiI8hI+q0HRN6Ehw==" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="window.__xlsxFailed = true"></script>
+  <script>
+    const XLSX_LOCAL_SRC = 'lib/xlsx.full.min.js';
+    const XLSX_CDN_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    window.__xlsxFailed = false;
+
+    function carregarScript(src, marcarFalha) {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.crossOrigin = 'anonymous';
+        script.referrerPolicy = 'no-referrer';
+        script.onload = () => {
+          window.__xlsxFailed = false;
+          resolve(true);
+        };
+        script.onerror = () => {
+          if (marcarFalha) {
+            window.__xlsxFailed = true;
+          }
+          resolve(false);
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function carregarBibliotecaXLSX() {
+      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
+      if (carregouLocal && window.XLSX) {
+        return true;
+      }
+
+      const carregouCDN = await carregarScript(XLSX_CDN_SRC, true);
+      return carregouCDN && !!window.XLSX;
+    }
+
+    window.__xlsxLoadPromise = carregarBibliotecaXLSX();
+  </script>
   <style>
     :root {
       color-scheme: dark;
@@ -931,7 +967,29 @@
       limparCamposRegra();
     }
 
-    function exportarXLSX() {
+    async function garantirXLSXDisponivel() {
+      if (window.XLSX) {
+        return true;
+      }
+
+      if (window.__xlsxLoadPromise) {
+        await window.__xlsxLoadPromise;
+        if (window.XLSX) {
+          window.__xlsxFailed = false;
+          return true;
+        }
+      }
+
+      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
+      if (carregouLocal && window.XLSX) {
+        window.__xlsxFailed = false;
+        return true;
+      }
+
+      return false;
+    }
+
+    async function exportarXLSX() {
       if (!formattedRows.length) {
         formatar();
       }
@@ -941,7 +999,9 @@
         return;
       }
 
-      if (window.XLSX && !window.__xlsxFailed) {
+      const xlsxDisponivel = await garantirXLSXDisponivel();
+
+      if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
         const data = [
           ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
           ...formattedRows.map((row) => [
@@ -968,6 +1028,7 @@
         return;
       }
 
+      window.__xlsxFailed = true;
       exportarCSV();
     }
 
