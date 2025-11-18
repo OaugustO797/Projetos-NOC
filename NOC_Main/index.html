@@ -933,6 +933,10 @@
 
     function exportarXLSX() {
       if (!formattedRows.length) {
+        formatar();
+      }
+
+      if (!formattedRows.length) {
         alert('Não há conteúdo formatado para exportar.');
         return;
       }
@@ -968,6 +972,15 @@
     }
 
     function exportarCSV() {
+      if (!formattedRows.length) {
+        formatar();
+      }
+
+      if (!formattedRows.length) {
+        alert('Não há conteúdo formatado para exportar.');
+        return;
+      }
+
       const data = [
         ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
         ...formattedRows.map((row) => [
