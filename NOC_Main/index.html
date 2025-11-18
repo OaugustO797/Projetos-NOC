@@ -284,7 +284,7 @@
 
   <script>
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
+    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s*(?:-|–)\s*([A-Za-z\d-]{4,})\s*(?:-|–)\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*(?:-|–)\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
@@ -294,6 +294,13 @@
       { match: 'Necessario a execucao', value: 'SIM' },
       { match: 'Necessario a execucao do servico', value: 'SIM' }
     ];
+    const fixtures = [
+      {
+        description: 'Linha sem espaços entre hífens deve ser normalizada',
+        input: '02:46- SEGODSCT-EMG- Necessário atuação',
+        expected: '02:46 - SEGODSCT - EMG - SIM'
+      }
+    ];
     let formattedRows = [];
     let userRules = [];
     let editingIndex = null;
@@ -301,6 +308,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       carregarRegras();
       renderizarRegras();
+      validarFixtures();
     });
 
     function formatar() {
@@ -342,8 +350,12 @@
           }
 
           const service = rawService.trim().toUpperCase();
-          const companies = rawCompanies.split(/\s*,\s*/).map((c) => c.toUpperCase()).filter(Boolean);
-          const status = normalizeStatus(rawStatus);
+          const companies = rawCompanies
+            .trim()
+            .split(/\s*,\s*/)
+            .map((c) => c.trim().toUpperCase())
+            .filter(Boolean);
+          const status = normalizeStatus(rawStatus.trim());
 
           for (const company of companies) {
             output.push(`${time} - ${service} - ${company} - ${status}`);
@@ -361,6 +373,41 @@
       }
 
       document.getElementById('out').textContent = output.join('\n');
+    }
+
+    function formatarLinhaParaTeste(line) {
+      const trimmedLine = line.trim();
+      const match = trimmedLine.match(eventRegex);
+      if (!match) {
+        return [trimmedLine];
+      }
+
+      const [, rawTime, rawService, rawCompanies, rawStatus] = match;
+      const time = normalizeTime(rawTime);
+      const service = rawService.trim().toUpperCase();
+      const companies = rawCompanies
+        .trim()
+        .split(/\s*,\s*/)
+        .map((c) => c.trim().toUpperCase())
+        .filter(Boolean);
+      const status = normalizeStatus(rawStatus.trim());
+
+      if (!companies.length) {
+        return [`${time} - ${service} - ${status}`];
+      }
+
+      return companies.map((company) => `${time} - ${service} - ${company} - ${status}`);
+    }
+
+    function validarFixtures() {
+      fixtures.forEach(({ description, input, expected }) => {
+        const resultados = formatarLinhaParaTeste(input);
+        if (!resultados.includes(expected)) {
+          console.warn(`Fixture falhou (${description}):`, { input, expected, resultados });
+          return;
+        }
+        console.info(`Fixture validada (${description}).`);
+      });
     }
 
     function normalizeTime(value) {
