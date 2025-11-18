@@ -61,6 +61,22 @@
       color: var(--text);
     }
 
+    input[type="text"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--text);
+      font-size: 0.95rem;
+      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.06);
+    }
+
+    input[type="text"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 0;
+    }
+
     textarea {
       width: 100%;
       min-height: 220px;
@@ -149,6 +165,67 @@
       gap: 0.75rem;
     }
 
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .rules-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background: rgba(15, 23, 42, 0.5);
+    }
+
+    .rule-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .rule-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rule-texts strong {
+      color: var(--accent);
+    }
+
+    .rule-texts span {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      word-break: break-word;
+    }
+
+    .rule-buttons {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .small-button {
+      padding: 0.45rem 0.9rem;
+      border-radius: 0.6rem;
+      font-size: 0.9rem;
+    }
+
     @media (max-width: 720px) {
       .wrapper {
         padding: 2rem 1rem 2.5rem;
@@ -181,6 +258,25 @@
     </div>
 
     <section class="panel">
+      <label>Regras personalizadas</label>
+      <div class="rules-grid">
+        <div>
+          <label for="ruleMatch">Texto a detectar</label>
+          <input id="ruleMatch" type="text" placeholder="Ex.: Necessário atuação" />
+        </div>
+        <div>
+          <label for="ruleValue">Substituição</label>
+          <input id="ruleValue" type="text" placeholder="Ex.: SIM" />
+        </div>
+      </div>
+      <div class="rules-actions">
+        <button type="button" class="secondary" onclick="salvarRegra()" id="ruleSaveButton">Salvar regra</button>
+        <button type="button" class="ghost" onclick="cancelarEdicao()">Cancelar edição</button>
+      </div>
+      <div id="rulesList" class="rules-list"></div>
+    </section>
+
+    <section class="panel">
       <label for="out">Saída formatada</label>
       <pre id="out"></pre>
     </section>
@@ -189,7 +285,23 @@
   <script>
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
     const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
+    const STORAGE_KEY = 'nocFormatterRules';
+    const defaultRules = [
+      { match: 'Sem atuacao', value: 'NÃO' },
+      { match: 'Servico em execucao', value: 'NÃO' },
+      { match: 'Necessario execucao do servico', value: 'SIM' },
+      { match: 'Necessario atuacao', value: 'SIM' },
+      { match: 'Necessario a execucao', value: 'SIM' },
+      { match: 'Necessario a execucao do servico', value: 'SIM' }
+    ];
     let formattedRows = [];
+    let userRules = [];
+    let editingIndex = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      carregarRegras();
+      renderizarRegras();
+    });
 
     function formatar() {
       const input = document.getElementById('in').value.split(/\r?\n/);
@@ -263,23 +375,15 @@
 
     function normalizeStatus(value) {
       let text = value.trim();
-      const base = stripAccents(text).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!]+$/, '');
-      const negativeOptions = new Set([
-        'sem atuacao',
-        'servico em execucao'
-      ]);
-      const positiveOptions = new Set([
-        'necessario execucao do servico',
-        'necessario atuacao',
-        'necessario a execucao',
-        'necessario a execucao do servico'
-      ]);
+      const normalizedInput = normalizeMatchText(text);
+      const rules = obterRegras();
 
-      if (negativeOptions.has(base)) {
-        return 'NÃO';
-      }
-      if (positiveOptions.has(base)) {
-        return 'SIM';
+      for (const rule of rules) {
+        if (!rule || !rule.match) continue;
+        const normalizedRule = normalizeMatchText(rule.match);
+        if (normalizedRule && normalizedRule === normalizedInput) {
+          return rule.value?.trim() || text;
+        }
       }
 
       if (!/[.!?]$/.test(text)) {
@@ -290,6 +394,14 @@
 
     function stripAccents(text) {
       return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function normalizeMatchText(text) {
+      return stripAccents(String(text)).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!?]+$/, '');
+    }
+
+    function obterRegras() {
+      return [...userRules, ...defaultRules];
     }
 
     function incDate(dateStr) {
@@ -345,6 +457,124 @@
       document.getElementById('in').value = '';
       document.getElementById('out').textContent = '';
       document.getElementById('in').focus();
+    }
+
+    function carregarRegras() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        userRules = [];
+        return;
+      }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          userRules = parsed.filter((rule) => rule && typeof rule.match === 'string');
+        }
+      } catch (error) {
+        userRules = [];
+      }
+    }
+
+    function salvarRegra() {
+      const match = document.getElementById('ruleMatch').value.trim();
+      const value = document.getElementById('ruleValue').value.trim();
+      if (!match || !value) {
+        alert('Preencha o texto a detectar e a substituição.');
+        return;
+      }
+
+      const newRule = { match, value };
+
+      if (editingIndex !== null && editingIndex >= 0 && editingIndex < userRules.length) {
+        userRules[editingIndex] = newRule;
+        editingIndex = null;
+      } else {
+        userRules.push(newRule);
+      }
+
+      persistirRegras();
+      limparCamposRegra();
+      renderizarRegras();
+    }
+
+    function persistirRegras() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(userRules));
+    }
+
+    function limparCamposRegra() {
+      document.getElementById('ruleMatch').value = '';
+      document.getElementById('ruleValue').value = '';
+      document.getElementById('ruleSaveButton').textContent = 'Salvar regra';
+    }
+
+    function renderizarRegras() {
+      const container = document.getElementById('rulesList');
+      container.innerHTML = '';
+
+      const allRules = obterRegras();
+      if (!allRules.length) {
+        container.textContent = 'Nenhuma regra cadastrada.';
+        return;
+      }
+
+      allRules.forEach((rule, index) => {
+        const item = document.createElement('div');
+        item.className = 'rule-item';
+
+        const texts = document.createElement('div');
+        texts.className = 'rule-texts';
+        texts.innerHTML = `<strong>${rule.value}</strong><span>${rule.match}</span>`;
+
+        const buttons = document.createElement('div');
+        buttons.className = 'rule-buttons';
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'secondary small-button';
+        editBtn.textContent = 'Editar';
+        editBtn.onclick = () => editarRegra(index);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'danger small-button';
+        removeBtn.textContent = 'Remover';
+        removeBtn.onclick = () => removerRegra(index);
+
+        buttons.appendChild(editBtn);
+        buttons.appendChild(removeBtn);
+
+        item.appendChild(texts);
+        item.appendChild(buttons);
+        container.appendChild(item);
+      });
+    }
+
+    function editarRegra(index) {
+      const allRules = obterRegras();
+      const rule = allRules[index];
+      if (!rule) return;
+
+      editingIndex = index >= userRules.length ? userRules.length : index;
+
+      document.getElementById('ruleMatch').value = rule.match;
+      document.getElementById('ruleValue').value = rule.value;
+      document.getElementById('ruleSaveButton').textContent = 'Atualizar regra';
+    }
+
+    function removerRegra(index) {
+      if (index >= userRules.length) {
+        alert('Não é possível remover regras padrão. Edite-as para sobrescrever.');
+        return;
+      }
+      userRules.splice(index, 1);
+      persistirRegras();
+      renderizarRegras();
+      cancelarEdicao();
+    }
+
+    function cancelarEdicao() {
+      editingIndex = null;
+      limparCamposRegra();
     }
 
     function exportarXLSX() {
