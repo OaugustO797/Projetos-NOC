@@ -686,11 +686,23 @@
           const service = rawService.trim().toUpperCase();
           const companies = rawCompanies.split(/\s*,\s*/).map((c) => c.toUpperCase()).filter(Boolean);
           const status = normalizeStatus(rawStatus);
+          const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
+          const observacao = '';
+          const atuacao = status || '';
 
           for (const company of companies) {
             output.push(`${time} - ${service} - ${company} - ${status}`);
             if (currentDate) {
-              formattedRows.push({ date: currentDate, time, service, company, status });
+              formattedRows.push({
+                date: currentDate,
+                time,
+                dataHora,
+                service,
+                company,
+                observacao,
+                atuacao,
+                status
+              });
             }
           }
 
@@ -927,11 +939,23 @@
 
       if (window.XLSX && !window.__xlsxFailed) {
         const data = [
-          ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
-          ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+          ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
+          ...formattedRows.map((row) => [
+            row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+            row.service ?? '',
+            row.company ?? '',
+            row.observacao ?? '',
+            row.atuacao ?? row.status ?? ''
+          ])
         ];
 
         const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const rowCount = data.length;
+        const ref = `A1:E${rowCount}`;
+        worksheet['!ref'] = ref;
+        worksheet['!autofilter'] = { ref };
+        worksheet['!table'] = [{ name: 'Tabela1', ref }];
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
@@ -945,8 +969,14 @@
 
     function exportarCSV() {
       const data = [
-        ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
-        ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+        ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
+        ...formattedRows.map((row) => [
+          row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+          row.service ?? '',
+          row.company ?? '',
+          row.observacao ?? '',
+          row.atuacao ?? row.status ?? ''
+        ])
       ];
 
       const csv = data.map((row) => row.map(escaparCSV).join(';')).join('\n');
