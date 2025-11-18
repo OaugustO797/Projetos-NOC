@@ -723,7 +723,7 @@
       for (const rule of rules) {
         if (!rule || !rule.match) continue;
         const normalizedRule = normalizeMatchText(rule.match);
-        if (normalizedRule && normalizedRule === normalizedInput) {
+        if (normalizedRule && (normalizedInput === normalizedRule || normalizedInput.includes(normalizedRule))) {
           return rule.value?.trim() || text;
         }
       }
