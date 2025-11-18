@@ -465,6 +465,14 @@
       padding: 0.9rem 1rem;
     }
 
+    .credits {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0 auto 1.25rem;
+      padding: 0 1.5rem;
+    }
+
     @media (max-width: 720px) {
       .wrapper {
         padding: 2rem 1rem 2.5rem;
@@ -568,10 +576,12 @@
     </section>
   </main>
 
+  <p class="credits">Criado por Onofre Augusto | NOC</p>
+
   <script>
     const THEME_KEY = 'nocFormatterTheme';
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
+    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
@@ -656,7 +666,10 @@
 
         const match = line.match(eventRegex);
         if (match) {
-          const [, rawTime, rawService, rawCompanies, rawStatus] = match;
+          const [, rawTime, serviceGroup, companiesGroup, statusGroup] = match;
+          const rawService = serviceGroup.trim();
+          const rawCompanies = companiesGroup.trim();
+          const rawStatus = statusGroup.trim();
           const time = normalizeTime(rawTime);
           const [hour, minutes] = time.split(':').map(Number);
           const currentMinutes = hour * 60 + minutes;
