@@ -4,19 +4,103 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-5fQZ4MJqQms1UEWhIaU9HS7UQGnd1ohIpJUd0YbX2rY8CibW47CVxItXx1+8QV+3z1l8pKMiI8hI+q0HRN6Ehw==" crossorigin="anonymous" referrerpolicy="no-referrer" onerror="window.__xlsxFailed = true"></script>
+  <script>
+    const XLSX_LOCAL_SRC = 'lib/xlsx.full.min.js';
+    const XLSX_CDN_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    window.__xlsxFailed = false;
+
+    function carregarScript(src, marcarFalha) {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.crossOrigin = 'anonymous';
+        script.referrerPolicy = 'no-referrer';
+        script.onload = () => {
+          window.__xlsxFailed = false;
+          resolve(true);
+        };
+        script.onerror = () => {
+          if (marcarFalha) {
+            window.__xlsxFailed = true;
+          }
+          resolve(false);
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function carregarBibliotecaXLSX() {
+      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
+      if (carregouLocal && window.XLSX) {
+        return true;
+      }
+
+      const carregouCDN = await carregarScript(XLSX_CDN_SRC, true);
+      return carregouCDN && !!window.XLSX;
+    }
+
+    window.__xlsxLoadPromise = carregarBibliotecaXLSX();
+  </script>
   <style>
     :root {
       color-scheme: dark;
       --bg: #0b1120;
       --surface: #1f2937;
+      --surface-strong: rgba(15, 23, 42, 0.9);
       --border: #334155;
       --text: #e2e8f0;
       --text-muted: #94a3b8;
       --accent: #38bdf8;
       --accent-hover: #0ea5e9;
       --danger: #f97316;
+      --bg-gradient: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      --matrix-overlay: none;
       font-size: 16px;
+    }
+
+    body.theme-default {
+      color-scheme: dark;
+      --bg: #0b1120;
+      --surface: #1f2937;
+      --surface-strong: rgba(15, 23, 42, 0.9);
+      --border: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --danger: #f97316;
+      --bg-gradient: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      --matrix-overlay: none;
+    }
+
+    body.theme-light {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-strong: rgba(255, 255, 255, 0.9);
+      --border: #d4d4d8;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --danger: #e11d48;
+      --bg-gradient: radial-gradient(circle at top, rgba(226, 232, 240, 0.9), var(--bg));
+      --matrix-overlay: none;
+    }
+
+    body.theme-hacker {
+      color-scheme: dark;
+      --bg: #020c0a;
+      --surface: rgba(4, 15, 12, 0.85);
+      --surface-strong: rgba(4, 15, 12, 0.95);
+      --border: #134e4a;
+      --text: #d1fae5;
+      --text-muted: #34d399;
+      --accent: #22c55e;
+      --accent-hover: #16a34a;
+      --danger: #f97316;
+      --bg-gradient: radial-gradient(circle at 20% 20%, rgba(15, 118, 110, 0.35), #020c0a 65%);
+      --matrix-overlay: repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0, rgba(34, 197, 94, 0.08) 2px, transparent 2px, transparent 4px);
     }
 
     * {
@@ -25,16 +109,31 @@
 
     body {
       margin: 0;
-      background: radial-gradient(circle at top, rgba(15, 23, 42, 0.9), var(--bg));
+      background: var(--bg-gradient);
       color: var(--text);
       font-family: "Segoe UI", "Helvetica Neue", Roboto, sans-serif;
       line-height: 1.5;
       min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: var(--matrix-overlay);
+      background-size: 100% 24px;
+      opacity: 0.5;
+      pointer-events: none;
+      animation: matrixFall 18s linear infinite;
+      mix-blend-mode: screen;
+      z-index: 0;
     }
 
     h1 {
       font-size: clamp(1.5rem, 2vw + 1rem, 2.5rem);
-      margin-bottom: 0.25rem;
+      margin: 0;
       text-align: center;
       letter-spacing: 0.04em;
     }
@@ -42,16 +141,183 @@
     .subtitle {
       text-align: center;
       color: var(--text-muted);
-      margin-bottom: 2rem;
+      margin: 0;
     }
 
     .wrapper {
+      position: relative;
       max-width: 1080px;
       margin: 0 auto;
       padding: 2.5rem 1.5rem 3rem;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      position: sticky;
+      top: 1rem;
+      backdrop-filter: blur(6px);
+      z-index: 2;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      align-items: center;
+      text-align: center;
+      flex: 1;
+    }
+
+    .menu-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 46px;
+      height: 46px;
+      border-radius: 0.9rem;
+      border: 1px solid var(--border);
+      background: linear-gradient(145deg, rgba(56, 189, 248, 0.18), rgba(14, 165, 233, 0.12));
+      color: var(--text);
+      font-size: 1.25rem;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    .menu-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(14, 165, 233, 0.3);
+    }
+
+    .menu-toggle:active {
+      transform: translateY(1px);
+    }
+
+    .menu-drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      width: min(380px, 90vw);
+      background: var(--surface-strong);
+      border-left: 1px solid var(--border);
+      box-shadow: -14px 0 28px rgba(0, 0, 0, 0.18);
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.25rem 1.25rem 1.5rem;
+      z-index: 5;
+      overflow-y: auto;
+      backdrop-filter: none;
+    }
+
+    .menu-drawer.open {
+      transform: translateX(0);
+    }
+
+    .menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 4;
+    }
+
+    .menu-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .menu-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .menu-title {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.02em;
+    }
+
+    .menu-close {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 0.75rem;
+      width: 42px;
+      height: 42px;
+      cursor: pointer;
+    }
+
+    .menu-section {
+      border: 1px solid var(--border);
+      border-radius: 0.85rem;
+      padding: 1rem;
+      background: var(--surface);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .menu-section h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+    }
+
+    .menu-section p {
+      margin: 0 0 0.85rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .theme-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .theme-button {
+      border: 1px solid var(--border);
+      background: var(--surface-strong);
+      color: var(--text);
+      border-radius: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      display: grid;
+      gap: 0.15rem;
+      transition: border-color 0.2s ease, transform 0.12s ease;
+    }
+
+    .theme-button span {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .theme-button.active {
+      border-color: var(--accent);
+      box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.35rem 0 1rem;
+      opacity: 0.8;
     }
 
     label {
@@ -61,19 +327,35 @@
       color: var(--text);
     }
 
+    input[type="text"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.95rem;
+      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.04);
+    }
+
+    input[type="text"]:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 0;
+    }
+
     textarea {
       width: 100%;
       min-height: 220px;
       padding: 1rem;
       border-radius: 0.75rem;
       border: 1px solid var(--border);
-      background: rgba(30, 41, 59, 0.6);
+      background: var(--surface);
       color: var(--text);
       resize: vertical;
       font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
       font-size: 0.95rem;
       line-height: 1.6;
-      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.1);
+      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.08);
     }
 
     textarea:focus {
@@ -87,7 +369,7 @@
       padding: 1rem;
       border-radius: 0.75rem;
       border: 1px solid var(--border);
-      background: rgba(15, 23, 42, 0.75);
+      background: var(--surface);
       color: var(--text);
       font-family: "Fira Code", "JetBrains Mono", "Consolas", monospace;
       font-size: 0.95rem;
@@ -149,9 +431,92 @@
       gap: 0.75rem;
     }
 
+    .rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .rules-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .rules-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      background: var(--surface);
+    }
+
+    .rule-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .rule-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .rule-texts strong {
+      color: var(--accent);
+    }
+
+    .rule-texts span {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      word-break: break-word;
+    }
+
+    .rule-buttons {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .small-button {
+      padding: 0.45rem 0.9rem;
+      border-radius: 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    .menu-note {
+      text-align: center;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 0.85rem;
+      padding: 0.9rem 1rem;
+    }
+
+    .credits {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: 0 auto 1.25rem;
+      padding: 0 1.5rem;
+    }
+
     @media (max-width: 720px) {
       .wrapper {
         padding: 2rem 1rem 2.5rem;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0.75rem;
       }
 
       textarea,
@@ -159,14 +524,75 @@
         min-height: 180px;
       }
     }
+
+    @keyframes matrixFall {
+      0% {
+        background-position-y: 0;
+      }
+      100% {
+        background-position-y: 200px;
+      }
+    }
   </style>
 </head>
 <body>
+  <div id="menuOverlay" class="menu-overlay" onclick="fecharMenu()"></div>
+  <aside id="menuDrawer" class="menu-drawer" aria-label="Menu lateral">
+    <div class="menu-header">
+      <h2 class="menu-title">Painel</h2>
+      <button class="menu-close" onclick="fecharMenu()" aria-label="Fechar menu">✕</button>
+    </div>
+    <section class="menu-section">
+      <h2>Temas</h2>
+      <p>Escolha o visual da aplicação. A seleção será lembrada no próximo acesso.</p>
+      <div class="theme-options">
+        <button class="theme-button active" data-theme="default" onclick="selecionarTema('default')">
+          <strong>Padrão</strong>
+          <span>Gradiente escuro</span>
+        </button>
+        <button class="theme-button" data-theme="light" onclick="selecionarTema('light')">
+          <strong>Claro</strong>
+          <span>Interfaces leves</span>
+        </button>
+        <button class="theme-button" data-theme="hacker" onclick="selecionarTema('hacker')">
+          <strong>Hacker</strong>
+          <span>Preto e verde</span>
+        </button>
+      </div>
+    </section>
+    <section class="menu-section">
+      <div class="menu-section-header">
+        <h2>Regras personalizadas</h2>
+        <p>Adicione, edite ou remova as regras que complementam os formatos padrão.</p>
+      </div>
+      <div class="rules-grid">
+        <div>
+          <label for="ruleMatch">Texto a detectar</label>
+          <input id="ruleMatch" type="text" placeholder="Ex.: Necessário atuação" />
+        </div>
+        <div>
+          <label for="ruleValue">Substituição</label>
+          <input id="ruleValue" type="text" placeholder="Ex.: SIM" />
+        </div>
+      </div>
+      <div class="rules-actions">
+        <button type="button" class="secondary" onclick="salvarRegra()" id="ruleSaveButton">Salvar regra</button>
+        <button type="button" class="ghost" onclick="cancelarEdicao()">Cancelar edição</button>
+      </div>
+      <div id="rulesList" class="rules-list"></div>
+    </section>
+  </aside>
+
   <main class="wrapper">
-    <header>
-      <h1>NOC Formatter</h1>
-      <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
-    </header>
+    <div class="topbar">
+      <button class="menu-toggle" id="menuButton" aria-label="Abrir menu" onclick="abrirMenu()">☰</button>
+      <div class="brand">
+        <h1>NOC Formatter</h1>
+        <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
+      </div>
+    </div>
+
+    <p class="menu-note">Acesse o menu (☰) para gerenciar os temas e as regras personalizadas.</p>
 
     <section class="panel">
       <label for="in">Entrada bruta</label>
@@ -186,10 +612,71 @@
     </section>
   </main>
 
+  <p class="credits">Criado por Onofre Augusto | NOC</p>
+
   <script>
+    const THEME_KEY = 'nocFormatterTheme';
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s(?:-|–)\s([A-Za-z\d-]{4,})\s(?:-|–)\s([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s(?:-|–)\s(.+)$/;
+    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
+    const STORAGE_KEY = 'nocFormatterRules';
+    const defaultRules = [
+      { match: 'Sem atuacao', value: 'NÃO' },
+      { match: 'Servico em execucao', value: 'NÃO' },
+      { match: 'Necessario execucao do servico', value: 'SIM' },
+      { match: 'Necessario atuacao', value: 'SIM' },
+      { match: 'Necessario a execucao', value: 'SIM' },
+      { match: 'Necessario a execucao do servico', value: 'SIM' }
+    ];
     let formattedRows = [];
+    let userRules = [];
+    let editingIndex = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      restaurarTema();
+      carregarRegras();
+      renderizarRegras();
+      atualizarBotoesTema();
+    });
+
+    function abrirMenu() {
+      document.getElementById('menuDrawer').classList.add('open');
+      document.getElementById('menuOverlay').classList.add('visible');
+    }
+
+    function fecharMenu() {
+      document.getElementById('menuDrawer').classList.remove('open');
+      document.getElementById('menuOverlay').classList.remove('visible');
+    }
+
+    function selecionarTema(theme) {
+      aplicarTema(theme);
+      fecharMenu();
+    }
+
+    function aplicarTema(theme) {
+      const themes = ['default', 'light', 'hacker'];
+      if (!themes.includes(theme)) {
+        theme = 'default';
+      }
+      document.body.classList.remove(...themes.map((t) => `theme-${t}`));
+      document.body.classList.add(`theme-${theme}`);
+      document.documentElement.style.colorScheme = theme === 'light' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, theme);
+      atualizarBotoesTema(theme);
+    }
+
+    function atualizarBotoesTema(activeTheme = localStorage.getItem(THEME_KEY) || 'default') {
+      const buttons = document.querySelectorAll('.theme-button');
+      buttons.forEach((button) => {
+        const theme = button.getAttribute('data-theme');
+        button.classList.toggle('active', theme === activeTheme);
+      });
+    }
+
+    function restaurarTema() {
+      const saved = localStorage.getItem(THEME_KEY) || 'default';
+      aplicarTema(saved);
+    }
 
     function formatar() {
       const input = document.getElementById('in').value.split(/\r?\n/);
@@ -215,7 +702,10 @@
 
         const match = line.match(eventRegex);
         if (match) {
-          const [, rawTime, rawService, rawCompanies, rawStatus] = match;
+          const [, rawTime, serviceGroup, companiesGroup, statusGroup] = match;
+          const rawService = serviceGroup.trim();
+          const rawCompanies = companiesGroup.trim();
+          const rawStatus = statusGroup.trim();
           const time = normalizeTime(rawTime);
           const [hour, minutes] = time.split(':').map(Number);
           const currentMinutes = hour * 60 + minutes;
@@ -232,11 +722,23 @@
           const service = rawService.trim().toUpperCase();
           const companies = rawCompanies.split(/\s*,\s*/).map((c) => c.toUpperCase()).filter(Boolean);
           const status = normalizeStatus(rawStatus);
+          const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
+          const observacao = '';
+          const atuacao = status || '';
 
           for (const company of companies) {
             output.push(`${time} - ${service} - ${company} - ${status}`);
             if (currentDate) {
-              formattedRows.push({ date: currentDate, time, service, company, status });
+              formattedRows.push({
+                date: currentDate,
+                time,
+                dataHora,
+                service,
+                company,
+                observacao,
+                atuacao,
+                status
+              });
             }
           }
 
@@ -263,23 +765,15 @@
 
     function normalizeStatus(value) {
       let text = value.trim();
-      const base = stripAccents(text).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!]+$/, '');
-      const negativeOptions = new Set([
-        'sem atuacao',
-        'servico em execucao'
-      ]);
-      const positiveOptions = new Set([
-        'necessario execucao do servico',
-        'necessario atuacao',
-        'necessario a execucao',
-        'necessario a execucao do servico'
-      ]);
+      const normalizedInput = normalizeMatchText(text);
+      const rules = obterRegras();
 
-      if (negativeOptions.has(base)) {
-        return 'NÃO';
-      }
-      if (positiveOptions.has(base)) {
-        return 'SIM';
+      for (const rule of rules) {
+        if (!rule || !rule.match) continue;
+        const normalizedRule = normalizeMatchText(rule.match);
+        if (normalizedRule && (normalizedInput === normalizedRule || normalizedInput.includes(normalizedRule))) {
+          return rule.value?.trim() || text;
+        }
       }
 
       if (!/[.!?]$/.test(text)) {
@@ -290,6 +784,14 @@
 
     function stripAccents(text) {
       return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function normalizeMatchText(text) {
+      return stripAccents(String(text)).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!?]+$/, '');
+    }
+
+    function obterRegras() {
+      return [...userRules, ...defaultRules];
     }
 
     function incDate(dateStr) {
@@ -347,19 +849,177 @@
       document.getElementById('in').focus();
     }
 
-    function exportarXLSX() {
+    function carregarRegras() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) {
+        userRules = [];
+        return;
+      }
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          userRules = parsed.filter((rule) => rule && typeof rule.match === 'string');
+        }
+      } catch (error) {
+        userRules = [];
+      }
+    }
+
+    function salvarRegra() {
+      const match = document.getElementById('ruleMatch').value.trim();
+      const value = document.getElementById('ruleValue').value.trim();
+      if (!match || !value) {
+        alert('Preencha o texto a detectar e a substituição.');
+        return;
+      }
+
+      const newRule = { match, value };
+
+      if (editingIndex !== null && editingIndex >= 0 && editingIndex < userRules.length) {
+        userRules[editingIndex] = newRule;
+        editingIndex = null;
+      } else {
+        userRules.push(newRule);
+      }
+
+      persistirRegras();
+      limparCamposRegra();
+      renderizarRegras();
+    }
+
+    function persistirRegras() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(userRules));
+    }
+
+    function limparCamposRegra() {
+      document.getElementById('ruleMatch').value = '';
+      document.getElementById('ruleValue').value = '';
+      document.getElementById('ruleSaveButton').textContent = 'Salvar regra';
+    }
+
+    function renderizarRegras() {
+      const container = document.getElementById('rulesList');
+      container.innerHTML = '';
+
+      const allRules = obterRegras();
+      if (!allRules.length) {
+        container.textContent = 'Nenhuma regra cadastrada.';
+        return;
+      }
+
+      allRules.forEach((rule, index) => {
+        const item = document.createElement('div');
+        item.className = 'rule-item';
+
+        const texts = document.createElement('div');
+        texts.className = 'rule-texts';
+        texts.innerHTML = `<strong>${rule.value}</strong><span>${rule.match}</span>`;
+
+        const buttons = document.createElement('div');
+        buttons.className = 'rule-buttons';
+
+        const editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'secondary small-button';
+        editBtn.textContent = 'Editar';
+        editBtn.onclick = () => editarRegra(index);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'danger small-button';
+        removeBtn.textContent = 'Remover';
+        removeBtn.onclick = () => removerRegra(index);
+
+        buttons.appendChild(editBtn);
+        buttons.appendChild(removeBtn);
+
+        item.appendChild(texts);
+        item.appendChild(buttons);
+        container.appendChild(item);
+      });
+    }
+
+    function editarRegra(index) {
+      const allRules = obterRegras();
+      const rule = allRules[index];
+      if (!rule) return;
+
+      editingIndex = index >= userRules.length ? userRules.length : index;
+
+      document.getElementById('ruleMatch').value = rule.match;
+      document.getElementById('ruleValue').value = rule.value;
+      document.getElementById('ruleSaveButton').textContent = 'Atualizar regra';
+    }
+
+    function removerRegra(index) {
+      if (index >= userRules.length) {
+        alert('Não é possível remover regras padrão. Edite-as para sobrescrever.');
+        return;
+      }
+      userRules.splice(index, 1);
+      persistirRegras();
+      renderizarRegras();
+      cancelarEdicao();
+    }
+
+    function cancelarEdicao() {
+      editingIndex = null;
+      limparCamposRegra();
+    }
+
+    async function garantirXLSXDisponivel() {
+      if (window.XLSX) {
+        return true;
+      }
+
+      if (window.__xlsxLoadPromise) {
+        await window.__xlsxLoadPromise;
+        if (window.XLSX) {
+          window.__xlsxFailed = false;
+          return true;
+        }
+      }
+
+      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
+      if (carregouLocal && window.XLSX) {
+        window.__xlsxFailed = false;
+        return true;
+      }
+
+      return false;
+    }
+
+    async function exportarXLSX() {
+      if (!formattedRows.length) {
+        formatar();
+      }
+
       if (!formattedRows.length) {
         alert('Não há conteúdo formatado para exportar.');
         return;
       }
 
-      if (window.XLSX && !window.__xlsxFailed) {
+      const xlsxDisponivel = await garantirXLSXDisponivel();
+
+      if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
         const data = [
-          ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
-          ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+          ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
+          ...formattedRows.map((row) => [
+            row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+            row.service ?? '',
+            row.company ?? '',
+            row.observacao ?? '',
+            row.atuacao ?? row.status ?? ''
+          ])
         ];
 
         const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const rowCount = data.length;
+        const ref = `A1:E${rowCount}`;
+        worksheet['!ref'] = ref;
+        worksheet['!autofilter'] = { ref };
+        worksheet['!table'] = [{ name: 'Tabela1', ref }];
+
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
@@ -368,13 +1028,29 @@
         return;
       }
 
+      window.__xlsxFailed = true;
       exportarCSV();
     }
 
     function exportarCSV() {
+      if (!formattedRows.length) {
+        formatar();
+      }
+
+      if (!formattedRows.length) {
+        alert('Não há conteúdo formatado para exportar.');
+        return;
+      }
+
       const data = [
-        ['Data', 'Hora', 'Serviço', 'Empresa', 'Status'],
-        ...formattedRows.map((row) => [row.date, row.time, row.service, row.company, row.status])
+        ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
+        ...formattedRows.map((row) => [
+          row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+          row.service ?? '',
+          row.company ?? '',
+          row.observacao ?? '',
+          row.atuacao ?? row.status ?? ''
+        ])
       ];
 
       const csv = data.map((row) => row.map(escaparCSV).join(';')).join('\n');
