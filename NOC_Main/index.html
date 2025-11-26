@@ -1018,7 +1018,6 @@
         const ref = `A1:E${rowCount}`;
         worksheet['!ref'] = ref;
         worksheet['!autofilter'] = { ref };
-        worksheet['!table'] = [{ name: 'Tabela1', ref }];
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
