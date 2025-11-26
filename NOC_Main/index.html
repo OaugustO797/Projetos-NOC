@@ -989,6 +989,16 @@
       return false;
     }
 
+    function mapearParaExportacaoXLSX(linhas) {
+      return linhas.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Servico: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observacao: row.observacao ?? '',
+        Atuacao: row.atuacao ?? row.status ?? ''
+      }));
+    }
+
     async function exportarXLSX() {
       if (!formattedRows.length) {
         formatar();
@@ -1002,29 +1012,46 @@
       const xlsxDisponivel = await garantirXLSXDisponivel();
 
       if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
-        const data = [
-          ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
-          ...formattedRows.map((row) => [
-            row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
-            row.service ?? '',
-            row.company ?? '',
-            row.observacao ?? '',
-            row.atuacao ?? row.status ?? ''
-          ])
+        const mapped = mapearParaExportacaoXLSX(formattedRows);
+        const worksheet = XLSX.utils.json_to_sheet(mapped, {
+          header: ['DataHora', 'Servico', 'Empresa', 'Observacao', 'Atuacao'],
+          skipHeader: false
+        });
+
+        worksheet['!cols'] = [
+          { wch: 24 },
+          { wch: 18 },
+          { wch: 12 },
+          { wch: 50 },
+          { wch: 10 }
         ];
 
-        const worksheet = XLSX.utils.aoa_to_sheet(data);
-        const rowCount = data.length;
-        const ref = `A1:E${rowCount}`;
-        worksheet['!ref'] = ref;
-        worksheet['!autofilter'] = { ref };
-        worksheet['!table'] = [{ name: 'Tabela1', ref }];
+        if (worksheet['!ref']) {
+          const range = XLSX.utils.decode_range(worksheet['!ref']);
+          worksheet['!autofilter'] = {
+            ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: range.e.c, r: range.e.r } })
+          };
+        }
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
         const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-        XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+
+        try {
+          XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+        } catch (error) {
+          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([wbout], { type: 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `noc-formatter-${timestamp}.xlsx`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
         return;
       }
 
