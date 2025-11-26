@@ -967,6 +967,16 @@
       limparCamposRegra();
     }
 
+    function mapForExport(rows) {
+      return rows.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Serviço: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observação: row.observacao ?? '',
+        Atuação: row.atuacao ?? row.status ?? ''
+      }));
+    }
+
     async function garantirXLSXDisponivel() {
       if (window.XLSX) {
         return true;
@@ -1002,28 +1012,42 @@
       const xlsxDisponivel = await garantirXLSXDisponivel();
 
       if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
-        const data = [
-          ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
-          ...formattedRows.map((row) => [
-            row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
-            row.service ?? '',
-            row.company ?? '',
-            row.observacao ?? '',
-            row.atuacao ?? row.status ?? ''
-          ])
+        const mappedRows = mapForExport(formattedRows);
+        const worksheet = XLSX.utils.json_to_sheet(mappedRows, {
+          header: ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação']
+        });
+
+        worksheet['!cols'] = [
+          { wch: 22 },
+          { wch: 28 },
+          { wch: 28 },
+          { wch: 50 },
+          { wch: 22 }
         ];
 
-        const worksheet = XLSX.utils.aoa_to_sheet(data);
-        const rowCount = data.length;
-        const ref = `A1:E${rowCount}`;
-        worksheet['!ref'] = ref;
-        worksheet['!autofilter'] = { ref };
+        const range = worksheet['!ref'] || XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: 4, r: mappedRows.length } });
+        worksheet['!ref'] = range;
+        worksheet['!autofilter'] = { ref: range };
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
         const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-        XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+        try {
+          XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+        } catch (error) {
+          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([wbout], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `noc-formatter-${timestamp}.xlsx`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
+        }
         return;
       }
 
