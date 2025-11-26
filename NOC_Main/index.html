@@ -999,6 +999,16 @@
       return false;
     }
 
+    function mapearParaExportacaoXLSX(linhas) {
+      return linhas.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Servico: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observacao: row.observacao ?? '',
+        Atuacao: row.atuacao ?? row.status ?? ''
+      }));
+    }
+
     async function exportarXLSX() {
       if (!formattedRows.length) {
         formatar();
