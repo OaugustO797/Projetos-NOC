@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
 
-  <!-- Carrega a biblioteca XLSX diretamente da CDN -->
+  <!-- Biblioteca XLSX via CDN -->
   <script
     src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
     crossorigin="anonymous"
@@ -71,7 +71,13 @@
       --accent-hover: #16a34a;
       --danger: #f97316;
       --bg-gradient: radial-gradient(circle at 20% 20%, rgba(15, 118, 110, 0.35), #020c0a 65%);
-      --matrix-overlay: repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0, rgba(34, 197, 94, 0.08) 2px, transparent 2px, transparent 4px);
+      --matrix-overlay: repeating-linear-gradient(
+        180deg,
+        rgba(34, 197, 94, 0.08) 0,
+        rgba(34, 197, 94, 0.08) 2px,
+        transparent 2px,
+        transparent 4px
+      );
     }
 
     * {
@@ -284,34 +290,11 @@
       transform: translateY(-1px);
     }
 
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0.35rem 0 1rem;
-      opacity: 0.8;
-    }
-
     label {
       display: block;
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--text);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.85rem 1rem;
-      border-radius: 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      font-size: 0.95rem;
-      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.04);
-    }
-
-    input[type="text"]:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
     }
 
     textarea {
@@ -327,11 +310,6 @@
       font-size: 0.95rem;
       line-height: 1.6;
       box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.08);
-    }
-
-    textarea:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
     }
 
     pre {
@@ -400,67 +378,6 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-    }
-
-    .rules-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .rules-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .rules-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      background: var(--surface);
-    }
-
-    .rule-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.5rem;
-      background: rgba(148, 163, 184, 0.12);
-    }
-
-    .rule-texts {
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .rule-texts strong {
-      color: var(--accent);
-    }
-
-    .rule-texts span {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      word-break: break-word;
-    }
-
-    .rule-buttons {
-      display: flex;
-      gap: 0.35rem;
-    }
-
-    .small-button {
-      padding: 0.45rem 0.9rem;
-      border-radius: 0.6rem;
-      font-size: 0.9rem;
     }
 
     .menu-note {
@@ -588,12 +505,13 @@
   <script>
     const THEME_KEY = 'nocFormatterTheme';
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
+    const eventRegex =
+      /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
       { match: 'Servico em execucao', value: 'NÃO' },
-      { match: 'Necessario execucao do servico', value: 'SIM' },
+      { match: 'Necessario_execucao_do_servico', value: 'SIM' },
       { match: 'Necessario atuacao', value: 'SIM' },
       { match: 'Necessario a execucao', value: 'SIM' },
       { match: 'Necessario a execucao do servico', value: 'SIM' }
@@ -691,7 +609,10 @@
           }
 
           const service = rawService.trim().toUpperCase();
-          const companies = rawCompanies.split(/\s*,\s*/).map((c) => c.toUpperCase()).filter(Boolean);
+          const companies = rawCompanies
+            .split(/\s*,\s*/)
+            .map((c) => c.toUpperCase())
+            .filter(Boolean);
           const status = normalizeStatus(rawStatus);
           const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
           const observacao = '';
@@ -938,9 +859,24 @@
       limparCamposRegra();
     }
 
+    // 🔹 NOVO: converte date (dd/MM/yyyy) + time (HH:mm) para UTC com Z, somando 3h
+    function formatarDataHoraUTC(row) {
+      if (!row || !row.date || !row.time) return '';
+
+      const [dia, mes, ano] = row.date.split('/').map(Number);
+      const [hh, mm] = row.time.split(':').map(Number);
+
+      // soma 3h (UTC-3 -> UTC); Date.UTC lida com overflow (24+)
+      const date = new Date(Date.UTC(ano, mes - 1, dia, hh + 3, mm, 0));
+
+      // yyyy-MM-ddTHH:mm:ssZ
+      return date.toISOString().replace('.000Z', 'Z');
+    }
+
+    // usa o helper acima tanto para XLSX quanto para CSV
     function mapForExport(rows) {
       return rows.map((row) => ({
-        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        DataHora: formatarDataHoraUTC(row),
         Serviço: row.service ?? '',
         Empresa: row.company ?? '',
         Observação: row.observacao ?? '',
@@ -1002,7 +938,7 @@
       const data = [
         ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
         ...formattedRows.map((row) => [
-          row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+          formatarDataHoraUTC(row),
           row.service ?? '',
           row.company ?? '',
           row.observacao ?? '',
