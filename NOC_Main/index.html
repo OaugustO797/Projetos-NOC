@@ -4,43 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
-  <script>
-    const XLSX_LOCAL_SRC = 'lib/xlsx.full.min.js';
-    const XLSX_CDN_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    window.__xlsxFailed = false;
 
-    function carregarScript(src, marcarFalha) {
-      return new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.crossOrigin = 'anonymous';
-        script.referrerPolicy = 'no-referrer';
-        script.onload = () => {
-          window.__xlsxFailed = false;
-          resolve(true);
-        };
-        script.onerror = () => {
-          if (marcarFalha) {
-            window.__xlsxFailed = true;
-          }
-          resolve(false);
-        };
-        document.head.appendChild(script);
-      });
-    }
+  <!-- Biblioteca XLSX via CDN -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
 
-    async function carregarBibliotecaXLSX() {
-      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
-      if (carregouLocal && window.XLSX) {
-        return true;
-      }
-
-      const carregouCDN = await carregarScript(XLSX_CDN_SRC, true);
-      return carregouCDN && !!window.XLSX;
-    }
-
-    window.__xlsxLoadPromise = carregarBibliotecaXLSX();
-  </script>
   <style>
     :root {
       color-scheme: dark;
@@ -100,7 +71,13 @@
       --accent-hover: #16a34a;
       --danger: #f97316;
       --bg-gradient: radial-gradient(circle at 20% 20%, rgba(15, 118, 110, 0.35), #020c0a 65%);
-      --matrix-overlay: repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0, rgba(34, 197, 94, 0.08) 2px, transparent 2px, transparent 4px);
+      --matrix-overlay: repeating-linear-gradient(
+        180deg,
+        rgba(34, 197, 94, 0.08) 0,
+        rgba(34, 197, 94, 0.08) 2px,
+        transparent 2px,
+        transparent 4px
+      );
     }
 
     * {
@@ -206,12 +183,12 @@
 
     .menu-drawer {
       position: fixed;
-      inset: 0 0 0 auto;
+      inset: 0 auto 0 0;
       width: min(380px, 90vw);
       background: var(--surface-strong);
-      border-left: 1px solid var(--border);
-      box-shadow: -14px 0 28px rgba(0, 0, 0, 0.18);
-      transform: translateX(100%);
+      border-right: 1px solid var(--border);
+      box-shadow: 14px 0 28px rgba(0, 0, 0, 0.18);
+      transform: translateX(-100%);
       transition: transform 0.3s ease;
       display: flex;
       flex-direction: column;
@@ -313,34 +290,11 @@
       transform: translateY(-1px);
     }
 
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0.35rem 0 1rem;
-      opacity: 0.8;
-    }
-
     label {
       display: block;
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--text);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.85rem 1rem;
-      border-radius: 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      font-size: 0.95rem;
-      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.04);
-    }
-
-    input[type="text"]:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
     }
 
     textarea {
@@ -356,11 +310,6 @@
       font-size: 0.95rem;
       line-height: 1.6;
       box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.08);
-    }
-
-    textarea:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
     }
 
     pre {
@@ -429,67 +378,6 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-    }
-
-    .rules-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .rules-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .rules-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      background: var(--surface);
-    }
-
-    .rule-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.5rem;
-      background: rgba(148, 163, 184, 0.12);
-    }
-
-    .rule-texts {
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .rule-texts strong {
-      color: var(--accent);
-    }
-
-    .rule-texts span {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      word-break: break-word;
-    }
-
-    .rule-buttons {
-      display: flex;
-      gap: 0.35rem;
-    }
-
-    .small-button {
-      padding: 0.45rem 0.9rem;
-      border-radius: 0.6rem;
-      font-size: 0.9rem;
     }
 
     .menu-note {
@@ -617,12 +505,13 @@
   <script>
     const THEME_KEY = 'nocFormatterTheme';
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
+    const eventRegex =
+      /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
       { match: 'Servico em execucao', value: 'NÃO' },
-      { match: 'Necessario execucao do servico', value: 'SIM' },
+      { match: 'Necessario_execucao_do_servico', value: 'SIM' },
       { match: 'Necessario atuacao', value: 'SIM' },
       { match: 'Necessario a execucao', value: 'SIM' },
       { match: 'Necessario a execucao do servico', value: 'SIM' }
@@ -719,12 +608,10 @@
             }
           }
 
-          const rawServiceNormalized = rawService.trim().toUpperCase();
-          const service = applyRulesToText(rawServiceNormalized) ?? rawServiceNormalized;
+          const service = rawService.trim().toUpperCase();
           const companies = rawCompanies
             .split(/\s*,\s*/)
             .map((c) => c.toUpperCase())
-            .map((company) => applyRulesToText(company) ?? company)
             .filter(Boolean);
           const status = normalizeStatus(rawStatus);
           const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
@@ -981,26 +868,29 @@
       limparCamposRegra();
     }
 
-    async function garantirXLSXDisponivel() {
-      if (window.XLSX) {
-        return true;
-      }
+    // 🔹 NOVO: converte date (dd/MM/yyyy) + time (HH:mm) para UTC com Z, somando 3h
+    function formatarDataHoraUTC(row) {
+      if (!row || !row.date || !row.time) return '';
 
-      if (window.__xlsxLoadPromise) {
-        await window.__xlsxLoadPromise;
-        if (window.XLSX) {
-          window.__xlsxFailed = false;
-          return true;
-        }
-      }
+      const [dia, mes, ano] = row.date.split('/').map(Number);
+      const [hh, mm] = row.time.split(':').map(Number);
 
-      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
-      if (carregouLocal && window.XLSX) {
-        window.__xlsxFailed = false;
-        return true;
-      }
+      // soma 3h (UTC-3 -> UTC); Date.UTC lida com overflow (24+)
+      const date = new Date(Date.UTC(ano, mes - 1, dia, hh + 3, mm, 0));
 
-      return false;
+      // yyyy-MM-ddTHH:mm:ssZ
+      return date.toISOString().replace('.000Z', 'Z');
+    }
+
+    // usa o helper acima tanto para XLSX quanto para CSV
+    function mapForExport(rows) {
+      return rows.map((row) => ({
+        DataHora: formatarDataHoraUTC(row),
+        Serviço: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observação: row.observacao ?? '',
+        Atuação: row.atuacao ?? row.status ?? ''
+      }));
     }
 
     function mapearParaExportacaoXLSX(linhas) {
@@ -1023,54 +913,35 @@
         return;
       }
 
-      const xlsxDisponivel = await garantirXLSXDisponivel();
-
-      if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
-        const mapped = mapearParaExportacaoXLSX(formattedRows);
-        const worksheet = XLSX.utils.json_to_sheet(mapped, {
-          header: ['DataHora', 'Servico', 'Empresa', 'Observacao', 'Atuacao'],
-          skipHeader: false
-        });
-
-        worksheet['!cols'] = [
-          { wch: 24 },
-          { wch: 18 },
-          { wch: 12 },
-          { wch: 50 },
-          { wch: 10 }
-        ];
-
-        if (worksheet['!ref']) {
-          const range = XLSX.utils.decode_range(worksheet['!ref']);
-          worksheet['!autofilter'] = {
-            ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: range.e.c, r: range.e.r } })
-          };
-        }
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
-
-        const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-
-        try {
-          XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
-        } catch (error) {
-          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([wbout], { type: 'application/octet-stream' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `noc-formatter-${timestamp}.xlsx`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
+      if (!window.XLSX) {
+        alert('Biblioteca XLSX não foi carregada. Tente recarregar a página.');
         return;
       }
 
-      window.__xlsxFailed = true;
-      exportarCSV();
+      const mappedRows = mapForExport(formattedRows);
+      const worksheet = XLSX.utils.json_to_sheet(mappedRows, {
+        header: ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação']
+      });
+
+      worksheet['!cols'] = [
+        { wch: 22 },
+        { wch: 28 },
+        { wch: 28 },
+        { wch: 50 },
+        { wch: 22 }
+      ];
+
+      const range =
+        worksheet['!ref'] ||
+        XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: 4, r: mappedRows.length } });
+      worksheet['!ref'] = range;
+      worksheet['!autofilter'] = { ref: range };
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+
+      const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+      XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
     }
 
     function exportarCSV() {
@@ -1086,7 +957,7 @@
       const data = [
         ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
         ...formattedRows.map((row) => [
-          row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+          formatarDataHoraUTC(row),
           row.service ?? '',
           row.company ?? '',
           row.observacao ?? '',
@@ -1105,7 +976,9 @@
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
 
-      const offlineMessage = window.__xlsxFailed || !window.XLSX ? '\nA biblioteca XLSX não pôde ser carregada; o arquivo foi exportado como CSV.' : '';
+      const offlineMessage = !window.XLSX
+        ? '\nA biblioteca XLSX não pôde ser carregada; o arquivo foi exportado como CSV.'
+        : '';
       alert(`Exportação concluída.${offlineMessage}`);
     }
 
