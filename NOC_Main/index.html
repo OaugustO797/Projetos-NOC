@@ -655,8 +655,7 @@
       return `${hour}:${mm}`;
     }
 
-    function normalizeStatus(value) {
-      let text = value.trim();
+    function applyRulesToText(text) {
       const normalizedInput = normalizeMatchText(text);
       const rules = obterRegras();
 
@@ -664,8 +663,18 @@
         if (!rule || !rule.match) continue;
         const normalizedRule = normalizeMatchText(rule.match);
         if (normalizedRule && (normalizedInput === normalizedRule || normalizedInput.includes(normalizedRule))) {
-          return rule.value?.trim() || text;
+          return rule.value?.trim() ?? text;
         }
+      }
+
+      return null;
+    }
+
+    function normalizeStatus(value) {
+      let text = value.trim();
+      const replaced = applyRulesToText(text);
+      if (replaced !== null) {
+        return replaced;
       }
 
       if (!/[.!?]$/.test(text)) {
@@ -881,6 +890,16 @@
         Empresa: row.company ?? '',
         Observação: row.observacao ?? '',
         Atuação: row.atuacao ?? row.status ?? ''
+      }));
+    }
+
+    function mapearParaExportacaoXLSX(linhas) {
+      return linhas.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Servico: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observacao: row.observacao ?? '',
+        Atuacao: row.atuacao ?? row.status ?? ''
       }));
     }
 
