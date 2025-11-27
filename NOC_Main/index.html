@@ -861,13 +861,30 @@
       return original;
     }
 
-    function normalizeStatus(value) {
-      let text = applyRulesToText(value);
+    function isYesNoStatus(text) {
+      const normalized = normalizeMatchText(text);
+      return normalized === 'sim' || normalized === 'nao' || normalized === 'não';
+    }
 
-      if (!/[.!?]$/.test(text)) {
-        text += '.';
+    function sanitizeAtuacao(value) {
+      const text = String(value ?? '').trim();
+      if (!text) return '';
+
+      if (isYesNoStatus(text)) {
+        return text.replace(/[.!?]+$/, '');
       }
+
       return text;
+    }
+
+    function normalizeStatus(value) {
+      const sanitized = sanitizeAtuacao(applyRulesToText(value));
+
+      if (!isYesNoStatus(sanitized) && sanitized && !/[.!?]$/.test(sanitized)) {
+        return `${sanitized}.`;
+      }
+
+      return sanitized;
     }
 
     function stripAccents(text) {
@@ -1219,7 +1236,7 @@
         Serviço: row.service ?? '',
         Empresa: row.company ?? '',
         Observação: row.observacao ?? '',
-        Atuação: row.atuacao ?? row.status ?? ''
+        Atuação: sanitizeAtuacao(row.atuacao ?? row.status ?? '')
       }));
     }
 
@@ -1229,7 +1246,7 @@
         Servico: row.service ?? '',
         Empresa: row.company ?? '',
         Observacao: row.observacao ?? '',
-        Atuacao: row.atuacao ?? row.status ?? ''
+        Atuacao: sanitizeAtuacao(row.atuacao ?? row.status ?? '')
       }));
     }
 
