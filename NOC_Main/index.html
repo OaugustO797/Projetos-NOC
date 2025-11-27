@@ -250,6 +250,41 @@
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
     }
 
+    .menu-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.5rem;
+      margin: 0.35rem 0 0.75rem;
+    }
+
+    .menu-tab {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    }
+
+    .menu-tab.active {
+      border-color: var(--accent);
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
     .menu-section h2 {
       margin: 0 0 0.35rem;
       font-size: 1rem;
@@ -288,6 +323,63 @@
       border-color: var(--accent);
       box-shadow: 0 10px 20px rgba(14, 165, 233, 0.3);
       transform: translateY(-1px);
+    }
+
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .catalog-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .catalog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .catalog-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-strong);
+      gap: 0.75rem;
+    }
+
+    .catalog-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .catalog-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent);
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border: 1px solid var(--border);
+    }
+
+    .catalog-empty {
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 0.95rem;
     }
 
     label {
@@ -364,6 +456,12 @@
       box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
     }
 
+    .small-button {
+      padding: 0.45rem 0.85rem;
+      border-radius: 0.65rem;
+      font-size: 0.9rem;
+    }
+
     button.ghost {
       background: linear-gradient(135deg, rgba(100, 116, 139, 0.7), rgba(71, 85, 105, 0.8));
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
@@ -430,45 +528,81 @@
       <h2 class="menu-title">Painel</h2>
       <button class="menu-close" onclick="fecharMenu()" aria-label="Fechar menu">✕</button>
     </div>
-    <section class="menu-section">
-      <h2>Temas</h2>
-      <p>Escolha o visual da aplicação. A seleção será lembrada no próximo acesso.</p>
-      <div class="theme-options">
-        <button class="theme-button active" data-theme="default" onclick="selecionarTema('default')">
-          <strong>Padrão</strong>
-          <span>Gradiente escuro</span>
-        </button>
-        <button class="theme-button" data-theme="light" onclick="selecionarTema('light')">
-          <strong>Claro</strong>
-          <span>Interfaces leves</span>
-        </button>
-        <button class="theme-button" data-theme="hacker" onclick="selecionarTema('hacker')">
-          <strong>Hacker</strong>
-          <span>Preto e verde</span>
-        </button>
-      </div>
-    </section>
-    <section class="menu-section">
-      <div class="menu-section-header">
-        <h2>Regras personalizadas</h2>
-        <p>Adicione, edite ou remova as regras que complementam os formatos padrão.</p>
-      </div>
-      <div class="rules-grid">
-        <div>
-          <label for="ruleMatch">Texto a detectar</label>
-          <input id="ruleMatch" type="text" placeholder="Ex.: Necessário atuação" />
+    <div class="menu-tabs" role="tablist">
+      <button class="menu-tab active" data-tab="config" onclick="ativarAba('config')" role="tab">Configurações</button>
+      <button class="menu-tab" data-tab="rules" onclick="ativarAba('rules')" role="tab">Regras</button>
+    </div>
+
+    <div class="tab-panel active" data-tab-panel="config" role="tabpanel">
+      <section class="menu-section">
+        <h2>Temas</h2>
+        <p>Escolha o visual da aplicação. A seleção será lembrada no próximo acesso.</p>
+        <div class="theme-options">
+          <button class="theme-button active" data-theme="default" onclick="selecionarTema('default')">
+            <strong>Padrão</strong>
+            <span>Gradiente escuro</span>
+          </button>
+          <button class="theme-button" data-theme="light" onclick="selecionarTema('light')">
+            <strong>Claro</strong>
+            <span>Interfaces leves</span>
+          </button>
+          <button class="theme-button" data-theme="hacker" onclick="selecionarTema('hacker')">
+            <strong>Hacker</strong>
+            <span>Preto e verde</span>
+          </button>
         </div>
-        <div>
-          <label for="ruleValue">Substituição</label>
-          <input id="ruleValue" type="text" placeholder="Ex.: SIM" />
+      </section>
+
+      <section class="menu-section">
+        <div class="menu-section-header">
+          <h2>Catálogo</h2>
+          <p>Cadastre palavras-chave para forçar a identificação de serviços e outros itens.</p>
         </div>
-      </div>
-      <div class="rules-actions">
-        <button type="button" class="secondary" onclick="salvarRegra()" id="ruleSaveButton">Salvar regra</button>
-        <button type="button" class="ghost" onclick="cancelarEdicao()">Cancelar edição</button>
-      </div>
-      <div id="rulesList" class="rules-list"></div>
-    </section>
+        <div class="catalog-grid">
+          <div>
+            <label for="catalogType">Tipo</label>
+            <select id="catalogType">
+              <option value="Serviço">Serviço</option>
+              <option value="Empresa">Empresa</option>
+              <option value="Observação">Observação</option>
+            </select>
+          </div>
+          <div>
+            <label for="catalogText">Texto a identificar</label>
+            <input id="catalogText" type="text" placeholder="Ex.: Serviço" />
+          </div>
+        </div>
+        <div class="catalog-actions">
+          <button type="button" class="secondary" onclick="adicionarEntradaCatalogo()">Adicionar ao catálogo</button>
+          <button type="button" class="ghost" onclick="limparCamposCatalogo()">Limpar</button>
+        </div>
+        <div id="catalogList" class="catalog-list"></div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="rules" role="tabpanel">
+      <section class="menu-section">
+        <div class="menu-section-header">
+          <h2>Regras personalizadas</h2>
+          <p>Adicione, edite ou remova as regras que complementam os formatos padrão.</p>
+        </div>
+        <div class="rules-grid">
+          <div>
+            <label for="ruleMatch">Texto a detectar</label>
+            <input id="ruleMatch" type="text" placeholder="Ex.: Necessário atuação" />
+          </div>
+          <div>
+            <label for="ruleValue">Substituição</label>
+            <input id="ruleValue" type="text" placeholder="Ex.: SIM" />
+          </div>
+        </div>
+        <div class="rules-actions">
+          <button type="button" class="secondary" onclick="salvarRegra()" id="ruleSaveButton">Salvar regra</button>
+          <button type="button" class="ghost" onclick="cancelarEdicao()">Cancelar edição</button>
+        </div>
+        <div id="rulesList" class="rules-list"></div>
+      </section>
+    </div>
   </aside>
 
   <main class="wrapper">
@@ -480,7 +614,7 @@
       </div>
     </div>
 
-    <p class="menu-note">Acesse o menu (☰) para gerenciar os temas e as regras personalizadas.</p>
+    <p class="menu-note">Acesse o menu (☰) para gerenciar temas, catálogo e regras personalizadas.</p>
 
     <section class="panel">
       <label for="in">Entrada bruta</label>
@@ -508,6 +642,7 @@
     const eventRegex =
       /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
+    const CATALOG_KEY = 'nocFormatterCatalog';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
       { match: 'Servico em execucao', value: 'NÃO' },
@@ -518,13 +653,17 @@
     ];
     let formattedRows = [];
     let userRules = [];
+    let catalogEntries = [];
     let editingIndex = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       restaurarTema();
       carregarRegras();
       renderizarRegras();
+      carregarCatalogo();
+      renderizarCatalogo();
       atualizarBotoesTema();
+      ativarAba('config');
     });
 
     function abrirMenu() {
@@ -540,6 +679,21 @@
     function selecionarTema(theme) {
       aplicarTema(theme);
       fecharMenu();
+    }
+
+    function ativarAba(tab) {
+      const tabs = document.querySelectorAll('.menu-tab');
+      const panels = document.querySelectorAll('.tab-panel');
+
+      tabs.forEach((button) => {
+        const isActive = button.getAttribute('data-tab') === tab;
+        button.classList.toggle('active', isActive);
+      });
+
+      panels.forEach((panel) => {
+        const isActive = panel.getAttribute('data-tab-panel') === tab;
+        panel.classList.toggle('active', isActive);
+      });
     }
 
     function aplicarTema(theme) {
@@ -575,6 +729,43 @@
       let lastHour = null;
       formattedRows = [];
 
+      function registrarEvento({ time, service, companies, status }) {
+        const [hour, minutes] = time.split(':').map(Number);
+        const currentMinutes = hour * 60 + minutes;
+
+        if (currentDate && lastTimeMinutes !== null) {
+          if (currentMinutes < lastTimeMinutes && lastHour !== null && lastHour >= 18 && hour <= 6) {
+            currentDate = incDate(currentDate);
+            output.push(currentDate);
+            lastTimeMinutes = null;
+            lastHour = null;
+          }
+        }
+
+        const observacao = applyRulesToText('');
+        const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
+
+        for (const company of companies.length ? companies : ['']) {
+          const formattedCompany = company ? applyRulesToText(company).toUpperCase() : '';
+          output.push(`${time} - ${service} - ${formattedCompany} - ${status}`);
+          if (currentDate) {
+            formattedRows.push({
+              date: currentDate,
+              time,
+              dataHora,
+              service,
+              company: formattedCompany,
+              observacao,
+              atuacao: status,
+              status
+            });
+          }
+        }
+
+        lastTimeMinutes = currentMinutes;
+        lastHour = hour;
+      }
+
       for (const rawLine of input) {
         const line = replaceUnicodeDashes(rawLine.trim());
         if (!line) {
@@ -608,7 +799,9 @@
             }
           }
 
-          const service = applyRulesToText(rawService).toUpperCase();
+          const serviceCatalogMatch = encontrarServicoNoCatalogo(rawService);
+          const serviceBase = serviceCatalogMatch?.text || rawService;
+          const service = applyRulesToText(serviceBase).toUpperCase();
           const companies = rawCompanies
             .split(/\s*,\s*/)
             .map((c) => applyRulesToText(c).toUpperCase())
@@ -618,24 +811,13 @@
           const observacao = applyRulesToText('');
           const atuacao = status || '';
 
-          for (const company of companies) {
-            output.push(`${time} - ${service} - ${company} - ${status}`);
-            if (currentDate) {
-              formattedRows.push({
-                date: currentDate,
-                time,
-                dataHora,
-                service,
-                company,
-                observacao,
-                atuacao,
-                status
-              });
-            }
-          }
+          registrarEvento({ time, service, companies, status: atuacao });
+          continue;
+        }
 
-          lastTimeMinutes = currentMinutes;
-          lastHour = hour;
+        const catalogClassification = tentarClassificarLinhaPorCatalogo(line);
+        if (catalogClassification) {
+          registrarEvento(catalogClassification);
           continue;
         }
 
@@ -698,6 +880,65 @@
 
     function obterRegras() {
       return [...userRules, ...defaultRules];
+    }
+
+    function normalizeCatalogValue(text) {
+      return normalizeMatchText(text);
+    }
+
+    function obterCatalogoPorTipo(tipo) {
+      return catalogEntries.filter((entry) => normalizeMatchText(entry.type || '') === normalizeMatchText(tipo));
+    }
+
+    function encontrarServicoNoCatalogo(texto) {
+      const normalized = normalizeCatalogValue(texto);
+      const services = obterCatalogoPorTipo('Serviço');
+      return services.find((entry) => {
+        const normalizedEntry = normalizeCatalogValue(entry.text);
+        return normalizedEntry && normalized.includes(normalizedEntry);
+      });
+    }
+
+    function tentarClassificarLinhaPorCatalogo(line) {
+      const sanitized = replaceUnicodeDashes(line.trim());
+      if (!sanitized) return null;
+
+      const timeMatch = sanitized.match(/^(\d{1,2}[:h]\d{2}h?)\s*[-–]?\s*(.+)$/i);
+      if (!timeMatch) return null;
+
+      const [, rawTime, rest] = timeMatch;
+      const serviceCatalog = encontrarServicoNoCatalogo(rest);
+      if (!serviceCatalog) return null;
+
+      const time = normalizeTime(rawTime);
+      const service = applyRulesToText(serviceCatalog.text).toUpperCase();
+
+      const escapedService = serviceCatalog.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const afterService = rest.replace(new RegExp(escapedService, 'i'), '').replace(/^[\s-–]+/, '').trim();
+
+      let companies = [];
+      let statusText = afterService;
+
+      if (afterService.includes('-')) {
+        const fragments = afterService.split(/\s*[-–]\s*/).filter(Boolean);
+        if (fragments.length) {
+          companies.push(fragments.shift());
+          statusText = fragments.join(' - ');
+        }
+      }
+
+      if (!statusText) {
+        statusText = serviceCatalog.text;
+      }
+
+      const status = normalizeStatus(statusText);
+
+      return {
+        time,
+        service,
+        companies: companies.map((c) => applyRulesToText(c).toUpperCase()),
+        status
+      };
     }
 
     function incDate(dateStr) {
@@ -871,6 +1112,90 @@
     function cancelarEdicao() {
       editingIndex = null;
       limparCamposRegra();
+    }
+
+    function carregarCatalogo() {
+      const saved = localStorage.getItem(CATALOG_KEY);
+      if (!saved) {
+        catalogEntries = [];
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          catalogEntries = parsed
+            .filter((entry) => entry && typeof entry.text === 'string')
+            .map((entry) => ({
+              type: entry.type || 'Serviço',
+              text: entry.text
+            }));
+        }
+      } catch (error) {
+        catalogEntries = [];
+      }
+    }
+
+    function persistirCatalogo() {
+      localStorage.setItem(CATALOG_KEY, JSON.stringify(catalogEntries));
+    }
+
+    function limparCamposCatalogo() {
+      document.getElementById('catalogText').value = '';
+      document.getElementById('catalogType').value = 'Serviço';
+    }
+
+    function adicionarEntradaCatalogo() {
+      const type = document.getElementById('catalogType').value || 'Serviço';
+      const text = document.getElementById('catalogText').value.trim();
+
+      if (!text) {
+        alert('Informe o texto a identificar.');
+        return;
+      }
+
+      catalogEntries.push({ type, text });
+      persistirCatalogo();
+      renderizarCatalogo();
+      limparCamposCatalogo();
+    }
+
+    function removerEntradaCatalogo(index) {
+      catalogEntries.splice(index, 1);
+      persistirCatalogo();
+      renderizarCatalogo();
+    }
+
+    function renderizarCatalogo() {
+      const list = document.getElementById('catalogList');
+      list.innerHTML = '';
+
+      if (!catalogEntries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'catalog-empty';
+        empty.textContent = 'Nenhuma entrada cadastrada.';
+        list.appendChild(empty);
+        return;
+      }
+
+      catalogEntries.forEach((entry, index) => {
+        const item = document.createElement('div');
+        item.className = 'catalog-item';
+
+        const texts = document.createElement('div');
+        texts.className = 'catalog-texts';
+        texts.innerHTML = `<span class="catalog-type">${entry.type || 'Serviço'}</span><strong>${entry.text}</strong>`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'danger small-button';
+        removeBtn.textContent = 'Remover';
+        removeBtn.onclick = () => removerEntradaCatalogo(index);
+
+        item.appendChild(texts);
+        item.appendChild(removeBtn);
+        list.appendChild(item);
+      });
     }
 
     // 🔹 NOVO: converte date (dd/MM/yyyy) + time (HH:mm) para UTC com Z, somando 3h
