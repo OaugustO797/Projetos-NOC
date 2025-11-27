@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
-  <link rel="icon" href="data:,">
+  <link rel="icon" type="image/svg+xml" href="lib/logo.svg" sizes="any">
 
   <!-- Biblioteca XLSX via CDN -->
   <script
@@ -153,9 +153,15 @@
       display: flex;
       flex-direction: column;
       gap: 0.35rem;
-      align-items: center;
-      text-align: center;
+      align-items: flex-start;
+      text-align: left;
       flex: 1;
+    }
+
+    .brand-logo {
+      height: 48px;
+      width: auto;
+      margin-bottom: 0.15rem;
     }
 
     .menu-toggle {
@@ -611,8 +617,12 @@
     <div class="topbar">
       <button class="menu-toggle" id="menuButton" aria-label="Abrir menu" onclick="abrirMenu()">☰</button>
       <div class="brand">
+        <img class="brand-logo" src="lib/noc-logo.svg" alt="Logotipo do NOC Formatter" />
         <h1>NOC Formatter</h1>
         <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
+      </div>
+      <div class="brand-logo" aria-hidden="true">
+        <img src="lib/logo.svg" alt="Logotipo NOC" loading="lazy" />
       </div>
     </div>
 
