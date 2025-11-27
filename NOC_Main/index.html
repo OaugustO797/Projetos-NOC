@@ -576,7 +576,7 @@
       formattedRows = [];
 
       for (const rawLine of input) {
-        const line = rawLine.trim();
+        const line = replaceUnicodeDashes(rawLine.trim());
         if (!line) {
           continue;
         }
@@ -643,6 +643,10 @@
       }
 
       document.getElementById('out').textContent = output.join('\n');
+    }
+
+    function replaceUnicodeDashes(text) {
+      return String(text ?? '').replace(/[\u2013\u2014]/g, '-');
     }
 
     function normalizeTime(value) {
