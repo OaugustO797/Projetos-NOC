@@ -608,14 +608,14 @@
             }
           }
 
-          const service = rawService.trim().toUpperCase();
+          const service = applyRulesToText(rawService).toUpperCase();
           const companies = rawCompanies
             .split(/\s*,\s*/)
-            .map((c) => c.toUpperCase())
+            .map((c) => applyRulesToText(c).toUpperCase())
             .filter(Boolean);
           const status = normalizeStatus(rawStatus);
           const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
-          const observacao = '';
+          const observacao = applyRulesToText('');
           const atuacao = status || '';
 
           for (const company of companies) {
@@ -639,7 +639,7 @@
           continue;
         }
 
-        output.push(line);
+        output.push(applyRulesToText(line));
       }
 
       document.getElementById('out').textContent = output.join('\n');
@@ -656,26 +656,27 @@
     }
 
     function applyRulesToText(text) {
-      const normalizedInput = normalizeMatchText(text);
+      const original = String(text ?? '').trim();
+      if (!original) {
+        return original;
+      }
+
+      const normalizedInput = normalizeMatchText(original);
       const rules = obterRegras();
 
       for (const rule of rules) {
         if (!rule || !rule.match) continue;
         const normalizedRule = normalizeMatchText(rule.match);
         if (normalizedRule && (normalizedInput === normalizedRule || normalizedInput.includes(normalizedRule))) {
-          return rule.value?.trim() ?? text;
+          return rule.value?.trim() ?? original;
         }
       }
 
-      return null;
+      return original;
     }
 
     function normalizeStatus(value) {
-      let text = value.trim();
-      const replaced = applyRulesToText(text);
-      if (replaced !== null) {
-        return replaced;
-      }
+      let text = applyRulesToText(value);
 
       if (!/[.!?]$/.test(text)) {
         text += '.';
