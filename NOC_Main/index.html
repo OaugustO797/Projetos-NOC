@@ -131,19 +131,6 @@
       z-index: 0;
     }
 
-    h1 {
-      font-size: clamp(1.5rem, 2vw + 1rem, 2.5rem);
-      margin: 0;
-      text-align: center;
-      letter-spacing: 0.04em;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
     .wrapper {
       position: relative;
       max-width: 1080px;
@@ -158,7 +145,7 @@
     .topbar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 1rem;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -169,15 +156,6 @@
       top: 1rem;
       backdrop-filter: blur(6px);
       z-index: 2;
-    }
-
-    .brand {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      align-items: center;
-      text-align: center;
-      flex: 1;
     }
 
     .menu-toggle {
@@ -586,10 +564,6 @@
   <main class="wrapper">
     <div class="topbar">
       <button class="menu-toggle" id="menuButton" aria-label="Abrir menu" onclick="abrirMenu()">☰</button>
-      <div class="brand">
-        <h1>NOC Formatter</h1>
-        <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
-      </div>
     </div>
 
     <p class="menu-note">Acesse o menu (☰) para gerenciar os temas e as regras personalizadas.</p>
@@ -719,8 +693,13 @@
             }
           }
 
-          const service = rawService.trim().toUpperCase();
-          const companies = rawCompanies.split(/\s*,\s*/).map((c) => c.toUpperCase()).filter(Boolean);
+          const rawServiceNormalized = rawService.trim().toUpperCase();
+          const service = applyRulesToText(rawServiceNormalized) ?? rawServiceNormalized;
+          const companies = rawCompanies
+            .split(/\s*,\s*/)
+            .map((c) => c.toUpperCase())
+            .map((company) => applyRulesToText(company) ?? company)
+            .filter(Boolean);
           const status = normalizeStatus(rawStatus);
           const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
           const observacao = '';
@@ -763,8 +742,7 @@
       return `${hour}:${mm}`;
     }
 
-    function normalizeStatus(value) {
-      let text = value.trim();
+    function applyRulesToText(text) {
       const normalizedInput = normalizeMatchText(text);
       const rules = obterRegras();
 
@@ -772,8 +750,18 @@
         if (!rule || !rule.match) continue;
         const normalizedRule = normalizeMatchText(rule.match);
         if (normalizedRule && (normalizedInput === normalizedRule || normalizedInput.includes(normalizedRule))) {
-          return rule.value?.trim() || text;
+          return rule.value?.trim() ?? text;
         }
+      }
+
+      return null;
+    }
+
+    function normalizeStatus(value) {
+      let text = value.trim();
+      const replaced = applyRulesToText(text);
+      if (replaced !== null) {
+        return replaced;
       }
 
       if (!/[.!?]$/.test(text)) {
@@ -989,6 +977,16 @@
       return false;
     }
 
+    function mapearParaExportacaoXLSX(linhas) {
+      return linhas.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Servico: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observacao: row.observacao ?? '',
+        Atuacao: row.atuacao ?? row.status ?? ''
+      }));
+    }
+
     async function exportarXLSX() {
       if (!formattedRows.length) {
         formatar();
@@ -1002,29 +1000,46 @@
       const xlsxDisponivel = await garantirXLSXDisponivel();
 
       if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
-        const data = [
-          ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
-          ...formattedRows.map((row) => [
-            row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
-            row.service ?? '',
-            row.company ?? '',
-            row.observacao ?? '',
-            row.atuacao ?? row.status ?? ''
-          ])
+        const mapped = mapearParaExportacaoXLSX(formattedRows);
+        const worksheet = XLSX.utils.json_to_sheet(mapped, {
+          header: ['DataHora', 'Servico', 'Empresa', 'Observacao', 'Atuacao'],
+          skipHeader: false
+        });
+
+        worksheet['!cols'] = [
+          { wch: 24 },
+          { wch: 18 },
+          { wch: 12 },
+          { wch: 50 },
+          { wch: 10 }
         ];
 
-        const worksheet = XLSX.utils.aoa_to_sheet(data);
-        const rowCount = data.length;
-        const ref = `A1:E${rowCount}`;
-        worksheet['!ref'] = ref;
-        worksheet['!autofilter'] = { ref };
-        worksheet['!table'] = [{ name: 'Tabela1', ref }];
+        if (worksheet['!ref']) {
+          const range = XLSX.utils.decode_range(worksheet['!ref']);
+          worksheet['!autofilter'] = {
+            ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: range.e.c, r: range.e.r } })
+          };
+        }
 
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
 
         const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-        XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+
+        try {
+          XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
+        } catch (error) {
+          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+          const blob = new Blob([wbout], { type: 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `noc-formatter-${timestamp}.xlsx`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
         return;
       }
 
