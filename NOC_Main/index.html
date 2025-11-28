@@ -4,43 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NOC Formatter</title>
-  <script>
-    const XLSX_LOCAL_SRC = 'lib/xlsx.full.min.js';
-    const XLSX_CDN_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    window.__xlsxFailed = false;
+  <link rel="icon" type="image/svg+xml" href="lib/logo.svg" sizes="any">
 
-    function carregarScript(src, marcarFalha) {
-      return new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.crossOrigin = 'anonymous';
-        script.referrerPolicy = 'no-referrer';
-        script.onload = () => {
-          window.__xlsxFailed = false;
-          resolve(true);
-        };
-        script.onerror = () => {
-          if (marcarFalha) {
-            window.__xlsxFailed = true;
-          }
-          resolve(false);
-        };
-        document.head.appendChild(script);
-      });
-    }
+  <!-- Biblioteca XLSX via CDN -->
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
 
-    async function carregarBibliotecaXLSX() {
-      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
-      if (carregouLocal && window.XLSX) {
-        return true;
-      }
-
-      const carregouCDN = await carregarScript(XLSX_CDN_SRC, true);
-      return carregouCDN && !!window.XLSX;
-    }
-
-    window.__xlsxLoadPromise = carregarBibliotecaXLSX();
-  </script>
   <style>
     :root {
       color-scheme: dark;
@@ -100,7 +72,13 @@
       --accent-hover: #16a34a;
       --danger: #f97316;
       --bg-gradient: radial-gradient(circle at 20% 20%, rgba(15, 118, 110, 0.35), #020c0a 65%);
-      --matrix-overlay: repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.08) 0, rgba(34, 197, 94, 0.08) 2px, transparent 2px, transparent 4px);
+      --matrix-overlay: repeating-linear-gradient(
+        180deg,
+        rgba(34, 197, 94, 0.08) 0,
+        rgba(34, 197, 94, 0.08) 2px,
+        transparent 2px,
+        transparent 4px
+      );
     }
 
     * {
@@ -145,7 +123,7 @@
     .topbar {
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: center;
       gap: 1rem;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -156,6 +134,21 @@
       top: 1rem;
       backdrop-filter: blur(6px);
       z-index: 2;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      align-items: flex-start;
+      text-align: left;
+      flex: 1;
+    }
+
+    .brand-logo {
+      height: 48px;
+      width: auto;
+      margin-bottom: 0.15rem;
     }
 
     .menu-toggle {
@@ -171,6 +164,7 @@
       font-size: 1.25rem;
       cursor: pointer;
       transition: transform 0.15s ease, box-shadow 0.2s ease;
+      margin-right: auto;
     }
 
     .menu-toggle:hover {
@@ -184,12 +178,12 @@
 
     .menu-drawer {
       position: fixed;
-      inset: 0 0 0 auto;
+      inset: 0 auto 0 0;
       width: min(380px, 90vw);
       background: var(--surface-strong);
-      border-left: 1px solid var(--border);
-      box-shadow: -14px 0 28px rgba(0, 0, 0, 0.18);
-      transform: translateX(100%);
+      border-right: 1px solid var(--border);
+      box-shadow: 14px 0 28px rgba(0, 0, 0, 0.18);
+      transform: translateX(-100%);
       transition: transform 0.3s ease;
       display: flex;
       flex-direction: column;
@@ -251,6 +245,41 @@
       box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
     }
 
+    .menu-tabs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.5rem;
+      margin: 0.35rem 0 0.75rem;
+    }
+
+    .menu-tab {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    }
+
+    .menu-tab.active {
+      border-color: var(--accent);
+      box-shadow: 0 10px 22px rgba(14, 165, 233, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .tab-panel.active {
+      display: flex;
+    }
+
     .menu-section h2 {
       margin: 0 0 0.35rem;
       font-size: 1rem;
@@ -291,11 +320,61 @@
       transform: translateY(-1px);
     }
 
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0.35rem 0 1rem;
-      opacity: 0.8;
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .catalog-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .catalog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+    }
+
+    .catalog-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--surface-strong);
+      gap: 0.75rem;
+    }
+
+    .catalog-texts {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .catalog-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent);
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border: 1px solid var(--border);
+    }
+
+    .catalog-empty {
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 0.95rem;
     }
 
     label {
@@ -303,22 +382,6 @@
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--text);
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.85rem 1rem;
-      border-radius: 0.75rem;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      font-size: 0.95rem;
-      box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.04);
-    }
-
-    input[type="text"]:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
     }
 
     textarea {
@@ -334,11 +397,6 @@
       font-size: 0.95rem;
       line-height: 1.6;
       box-shadow: inset 0 0 0 999px rgba(8, 47, 73, 0.08);
-    }
-
-    textarea:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
     }
 
     pre {
@@ -393,6 +451,12 @@
       box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
     }
 
+    .small-button {
+      padding: 0.45rem 0.85rem;
+      border-radius: 0.65rem;
+      font-size: 0.9rem;
+    }
+
     button.ghost {
       background: linear-gradient(135deg, rgba(100, 116, 139, 0.7), rgba(71, 85, 105, 0.8));
       box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
@@ -407,67 +471,6 @@
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-    }
-
-    .rules-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .rules-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .rules-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
-      border-radius: 0.75rem;
-      background: var(--surface);
-    }
-
-    .rule-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.5rem;
-      background: rgba(148, 163, 184, 0.12);
-    }
-
-    .rule-texts {
-      display: flex;
-      flex-direction: column;
-      gap: 0.125rem;
-      flex: 1;
-      min-width: 0;
-    }
-
-    .rule-texts strong {
-      color: var(--accent);
-    }
-
-    .rule-texts span {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      word-break: break-word;
-    }
-
-    .rule-buttons {
-      display: flex;
-      gap: 0.35rem;
-    }
-
-    .small-button {
-      padding: 0.45rem 0.9rem;
-      border-radius: 0.6rem;
-      font-size: 0.9rem;
     }
 
     .menu-note {
@@ -520,53 +523,97 @@
       <h2 class="menu-title">Painel</h2>
       <button class="menu-close" onclick="fecharMenu()" aria-label="Fechar menu">✕</button>
     </div>
-    <section class="menu-section">
-      <h2>Temas</h2>
-      <p>Escolha o visual da aplicação. A seleção será lembrada no próximo acesso.</p>
-      <div class="theme-options">
-        <button class="theme-button active" data-theme="default" onclick="selecionarTema('default')">
-          <strong>Padrão</strong>
-          <span>Gradiente escuro</span>
-        </button>
-        <button class="theme-button" data-theme="light" onclick="selecionarTema('light')">
-          <strong>Claro</strong>
-          <span>Interfaces leves</span>
-        </button>
-        <button class="theme-button" data-theme="hacker" onclick="selecionarTema('hacker')">
-          <strong>Hacker</strong>
-          <span>Preto e verde</span>
-        </button>
-      </div>
-    </section>
-    <section class="menu-section">
-      <div class="menu-section-header">
-        <h2>Regras personalizadas</h2>
-        <p>Adicione, edite ou remova as regras que complementam os formatos padrão.</p>
-      </div>
-      <div class="rules-grid">
-        <div>
-          <label for="ruleMatch">Texto a detectar</label>
-          <input id="ruleMatch" type="text" placeholder="Ex.: Necessário atuação" />
+    <div class="menu-tabs" role="tablist">
+      <button class="menu-tab active" data-tab="config" onclick="ativarAba('config')" role="tab">Configurações</button>
+      <button class="menu-tab" data-tab="rules" onclick="ativarAba('rules')" role="tab">Regras</button>
+    </div>
+
+    <div class="tab-panel active" data-tab-panel="config" role="tabpanel">
+      <section class="menu-section">
+        <h2>Temas</h2>
+        <p>Escolha o visual da aplicação. A seleção será lembrada no próximo acesso.</p>
+        <div class="theme-options">
+          <button class="theme-button active" data-theme="default" onclick="selecionarTema('default')">
+            <strong>Padrão</strong>
+            <span>Gradiente escuro</span>
+          </button>
+          <button class="theme-button" data-theme="light" onclick="selecionarTema('light')">
+            <strong>Claro</strong>
+            <span>Interfaces leves</span>
+          </button>
+          <button class="theme-button" data-theme="hacker" onclick="selecionarTema('hacker')">
+            <strong>Hacker</strong>
+            <span>Preto e verde</span>
+          </button>
         </div>
-        <div>
-          <label for="ruleValue">Substituição</label>
-          <input id="ruleValue" type="text" placeholder="Ex.: SIM" />
+      </section>
+
+      <section class="menu-section">
+        <div class="menu-section-header">
+          <h2>Catálogo</h2>
+          <p>Cadastre palavras-chave para forçar a identificação de serviços e outros itens.</p>
         </div>
-      </div>
-      <div class="rules-actions">
-        <button type="button" class="secondary" onclick="salvarRegra()" id="ruleSaveButton">Salvar regra</button>
-        <button type="button" class="ghost" onclick="cancelarEdicao()">Cancelar edição</button>
-      </div>
-      <div id="rulesList" class="rules-list"></div>
-    </section>
+        <div class="catalog-grid">
+          <div>
+            <label for="catalogType">Tipo</label>
+            <select id="catalogType">
+              <option value="Serviço">Serviço</option>
+              <option value="Empresa">Empresa</option>
+              <option value="Observação">Observação</option>
+            </select>
+          </div>
+          <div>
+            <label for="catalogText">Texto a identificar</label>
+            <input id="catalogText" type="text" placeholder="Ex.: Serviço" />
+          </div>
+        </div>
+        <div class="catalog-actions">
+          <button type="button" class="secondary" onclick="adicionarEntradaCatalogo()">Adicionar ao catálogo</button>
+          <button type="button" class="ghost" onclick="limparCamposCatalogo()">Limpar</button>
+        </div>
+        <div id="catalogList" class="catalog-list"></div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="rules" role="tabpanel">
+      <section class="menu-section">
+        <div class="menu-section-header">
+          <h2>Regras personalizadas</h2>
+          <p>Adicione, edite ou remova as regras que complementam os formatos padrão.</p>
+        </div>
+        <div class="rules-grid">
+          <div>
+            <label for="ruleMatch">Texto a detectar</label>
+            <input id="ruleMatch" type="text" placeholder="Ex.: Necessário atuação" />
+          </div>
+          <div>
+            <label for="ruleValue">Substituição</label>
+            <input id="ruleValue" type="text" placeholder="Ex.: SIM" />
+          </div>
+        </div>
+        <div class="rules-actions">
+          <button type="button" class="secondary" onclick="salvarRegra()" id="ruleSaveButton">Salvar regra</button>
+          <button type="button" class="ghost" onclick="cancelarEdicao()">Cancelar edição</button>
+        </div>
+        <div id="rulesList" class="rules-list"></div>
+      </section>
+    </div>
   </aside>
 
   <main class="wrapper">
     <div class="topbar">
       <button class="menu-toggle" id="menuButton" aria-label="Abrir menu" onclick="abrirMenu()">☰</button>
+      <div class="brand">
+        <img class="brand-logo" src="lib/noc-logo.svg" alt="Logotipo do NOC Formatter" />
+        <h1>NOC Formatter</h1>
+        <p class="subtitle">Formate o relatório diário com poucos cliques, totalmente offline.</p>
+      </div>
+      <div class="brand-logo" aria-hidden="true">
+        <img src="lib/logo.svg" alt="Logotipo NOC" loading="lazy" />
+      </div>
     </div>
 
-    <p class="menu-note">Acesse o menu (☰) para gerenciar os temas e as regras personalizadas.</p>
+    <p class="menu-note">Acesse o menu (☰) para gerenciar temas, catálogo e regras personalizadas.</p>
 
     <section class="panel">
       <label for="in">Entrada bruta</label>
@@ -591,25 +638,31 @@
   <script>
     const THEME_KEY = 'nocFormatterTheme';
     const dateRegex = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-    const eventRegex = /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
+    const eventRegex =
+      /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
+    const CATALOG_KEY = 'nocFormatterCatalog';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
       { match: 'Servico em execucao', value: 'NÃO' },
-      { match: 'Necessario execucao do servico', value: 'SIM' },
+      { match: 'Necessario_execucao_do_servico', value: 'SIM' },
       { match: 'Necessario atuacao', value: 'SIM' },
       { match: 'Necessario a execucao', value: 'SIM' },
       { match: 'Necessario a execucao do servico', value: 'SIM' }
     ];
     let formattedRows = [];
     let userRules = [];
+    let catalogEntries = [];
     let editingIndex = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       restaurarTema();
       carregarRegras();
       renderizarRegras();
+      carregarCatalogo();
+      renderizarCatalogo();
       atualizarBotoesTema();
+      ativarAba('config');
     });
 
     function abrirMenu() {
@@ -625,6 +678,21 @@
     function selecionarTema(theme) {
       aplicarTema(theme);
       fecharMenu();
+    }
+
+    function ativarAba(tab) {
+      const tabs = document.querySelectorAll('.menu-tab');
+      const panels = document.querySelectorAll('.tab-panel');
+
+      tabs.forEach((button) => {
+        const isActive = button.getAttribute('data-tab') === tab;
+        button.classList.toggle('active', isActive);
+      });
+
+      panels.forEach((panel) => {
+        const isActive = panel.getAttribute('data-tab-panel') === tab;
+        panel.classList.toggle('active', isActive);
+      });
     }
 
     function aplicarTema(theme) {
@@ -660,8 +728,45 @@
       let lastHour = null;
       formattedRows = [];
 
+      function registrarEvento({ time, service, companies, status }) {
+        const [hour, minutes] = time.split(':').map(Number);
+        const currentMinutes = hour * 60 + minutes;
+
+        if (currentDate && lastTimeMinutes !== null) {
+          if (currentMinutes < lastTimeMinutes && lastHour !== null && lastHour >= 18 && hour <= 6) {
+            currentDate = incDate(currentDate);
+            output.push(currentDate);
+            lastTimeMinutes = null;
+            lastHour = null;
+          }
+        }
+
+        const observacao = applyRulesToText('');
+        const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
+
+        for (const company of companies.length ? companies : ['']) {
+          const formattedCompany = company ? applyRulesToText(company).toUpperCase() : '';
+          output.push(`${time} - ${service} - ${formattedCompany} - ${status}`);
+          if (currentDate) {
+            formattedRows.push({
+              date: currentDate,
+              time,
+              dataHora,
+              service,
+              company: formattedCompany,
+              observacao,
+              atuacao: status,
+              status
+            });
+          }
+        }
+
+        lastTimeMinutes = currentMinutes;
+        lastHour = hour;
+      }
+
       for (const rawLine of input) {
-        const line = rawLine.trim();
+        const line = replaceUnicodeDashes(rawLine.trim());
         if (!line) {
           continue;
         }
@@ -693,43 +798,36 @@
             }
           }
 
-          const rawServiceNormalized = rawService.trim().toUpperCase();
-          const service = applyRulesToText(rawServiceNormalized) ?? rawServiceNormalized;
+          const serviceCatalogMatch = encontrarServicoNoCatalogo(rawService);
+          const serviceBase = serviceCatalogMatch?.text || rawService;
+          const service = applyRulesToText(serviceBase).toUpperCase();
           const companies = rawCompanies
             .split(/\s*,\s*/)
-            .map((c) => c.toUpperCase())
-            .map((company) => applyRulesToText(company) ?? company)
+            .map((c) => applyRulesToText(c).toUpperCase())
             .filter(Boolean);
           const status = normalizeStatus(rawStatus);
           const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
-          const observacao = '';
+          const observacao = applyRulesToText('');
           const atuacao = status || '';
 
-          for (const company of companies) {
-            output.push(`${time} - ${service} - ${company} - ${status}`);
-            if (currentDate) {
-              formattedRows.push({
-                date: currentDate,
-                time,
-                dataHora,
-                service,
-                company,
-                observacao,
-                atuacao,
-                status
-              });
-            }
-          }
-
-          lastTimeMinutes = currentMinutes;
-          lastHour = hour;
+          registrarEvento({ time, service, companies, status: atuacao });
           continue;
         }
 
-        output.push(line);
+        const catalogClassification = tentarClassificarLinhaPorCatalogo(line);
+        if (catalogClassification) {
+          registrarEvento(catalogClassification);
+          continue;
+        }
+
+        output.push(applyRulesToText(line));
       }
 
       document.getElementById('out').textContent = output.join('\n');
+    }
+
+    function replaceUnicodeDashes(text) {
+      return String(text ?? '').replace(/[\u2013\u2014]/g, '-');
     }
 
     function normalizeTime(value) {
@@ -743,31 +841,49 @@
     }
 
     function applyRulesToText(text) {
-      const normalizedInput = normalizeMatchText(text);
+      const original = String(text ?? '').trim();
+      if (!original) {
+        return original;
+      }
+
+      const normalizedInput = normalizeMatchText(original);
       const rules = obterRegras();
 
       for (const rule of rules) {
         if (!rule || !rule.match) continue;
         const normalizedRule = normalizeMatchText(rule.match);
         if (normalizedRule && (normalizedInput === normalizedRule || normalizedInput.includes(normalizedRule))) {
-          return rule.value?.trim() ?? text;
+          return rule.value?.trim() ?? original;
         }
       }
 
-      return null;
+      return original;
+    }
+
+    function isYesNoStatus(text) {
+      const normalized = normalizeMatchText(text);
+      return normalized === 'sim' || normalized === 'nao' || normalized === 'não';
+    }
+
+    function sanitizeAtuacao(value) {
+      const text = String(value ?? '').trim();
+      if (!text) return '';
+
+      if (isYesNoStatus(text)) {
+        return text.replace(/[.!?]+$/, '');
+      }
+
+      return text;
     }
 
     function normalizeStatus(value) {
-      let text = value.trim();
-      const replaced = applyRulesToText(text);
-      if (replaced !== null) {
-        return replaced;
+      const sanitized = sanitizeAtuacao(applyRulesToText(value));
+
+      if (!isYesNoStatus(sanitized) && sanitized && !/[.!?]$/.test(sanitized)) {
+        return `${sanitized}.`;
       }
 
-      if (!/[.!?]$/.test(text)) {
-        text += '.';
-      }
-      return text;
+      return sanitized;
     }
 
     function stripAccents(text) {
@@ -780,6 +896,65 @@
 
     function obterRegras() {
       return [...userRules, ...defaultRules];
+    }
+
+    function normalizeCatalogValue(text) {
+      return normalizeMatchText(text);
+    }
+
+    function obterCatalogoPorTipo(tipo) {
+      return catalogEntries.filter((entry) => normalizeMatchText(entry.type || '') === normalizeMatchText(tipo));
+    }
+
+    function encontrarServicoNoCatalogo(texto) {
+      const normalized = normalizeCatalogValue(texto);
+      const services = obterCatalogoPorTipo('Serviço');
+      return services.find((entry) => {
+        const normalizedEntry = normalizeCatalogValue(entry.text);
+        return normalizedEntry && normalized.includes(normalizedEntry);
+      });
+    }
+
+    function tentarClassificarLinhaPorCatalogo(line) {
+      const sanitized = replaceUnicodeDashes(line.trim());
+      if (!sanitized) return null;
+
+      const timeMatch = sanitized.match(/^(\d{1,2}[:h]\d{2}h?)\s*[-–]?\s*(.+)$/i);
+      if (!timeMatch) return null;
+
+      const [, rawTime, rest] = timeMatch;
+      const serviceCatalog = encontrarServicoNoCatalogo(rest);
+      if (!serviceCatalog) return null;
+
+      const time = normalizeTime(rawTime);
+      const service = applyRulesToText(serviceCatalog.text).toUpperCase();
+
+      const escapedService = serviceCatalog.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const afterService = rest.replace(new RegExp(escapedService, 'i'), '').replace(/^[\s-–]+/, '').trim();
+
+      let companies = [];
+      let statusText = afterService;
+
+      if (afterService.includes('-')) {
+        const fragments = afterService.split(/\s*[-–]\s*/).filter(Boolean);
+        if (fragments.length) {
+          companies.push(fragments.shift());
+          statusText = fragments.join(' - ');
+        }
+      }
+
+      if (!statusText) {
+        statusText = serviceCatalog.text;
+      }
+
+      const status = normalizeStatus(statusText);
+
+      return {
+        time,
+        service,
+        companies: companies.map((c) => applyRulesToText(c).toUpperCase()),
+        status
+      };
     }
 
     function incDate(dateStr) {
@@ -955,26 +1130,123 @@
       limparCamposRegra();
     }
 
-    async function garantirXLSXDisponivel() {
-      if (window.XLSX) {
-        return true;
+    function carregarCatalogo() {
+      const saved = localStorage.getItem(CATALOG_KEY);
+      if (!saved) {
+        catalogEntries = [];
+        return;
       }
 
-      if (window.__xlsxLoadPromise) {
-        await window.__xlsxLoadPromise;
-        if (window.XLSX) {
-          window.__xlsxFailed = false;
-          return true;
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          catalogEntries = parsed
+            .filter((entry) => entry && typeof entry.text === 'string')
+            .map((entry) => ({
+              type: entry.type || 'Serviço',
+              text: entry.text
+            }));
         }
+      } catch (error) {
+        catalogEntries = [];
+      }
+    }
+
+    function persistirCatalogo() {
+      localStorage.setItem(CATALOG_KEY, JSON.stringify(catalogEntries));
+    }
+
+    function limparCamposCatalogo() {
+      document.getElementById('catalogText').value = '';
+      document.getElementById('catalogType').value = 'Serviço';
+    }
+
+    function adicionarEntradaCatalogo() {
+      const type = document.getElementById('catalogType').value || 'Serviço';
+      const text = document.getElementById('catalogText').value.trim();
+
+      if (!text) {
+        alert('Informe o texto a identificar.');
+        return;
       }
 
-      const carregouLocal = await carregarScript(XLSX_LOCAL_SRC);
-      if (carregouLocal && window.XLSX) {
-        window.__xlsxFailed = false;
-        return true;
+      catalogEntries.push({ type, text });
+      persistirCatalogo();
+      renderizarCatalogo();
+      limparCamposCatalogo();
+    }
+
+    function removerEntradaCatalogo(index) {
+      catalogEntries.splice(index, 1);
+      persistirCatalogo();
+      renderizarCatalogo();
+    }
+
+    function renderizarCatalogo() {
+      const list = document.getElementById('catalogList');
+      list.innerHTML = '';
+
+      if (!catalogEntries.length) {
+        const empty = document.createElement('div');
+        empty.className = 'catalog-empty';
+        empty.textContent = 'Nenhuma entrada cadastrada.';
+        list.appendChild(empty);
+        return;
       }
 
-      return false;
+      catalogEntries.forEach((entry, index) => {
+        const item = document.createElement('div');
+        item.className = 'catalog-item';
+
+        const texts = document.createElement('div');
+        texts.className = 'catalog-texts';
+        texts.innerHTML = `<span class="catalog-type">${entry.type || 'Serviço'}</span><strong>${entry.text}</strong>`;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'danger small-button';
+        removeBtn.textContent = 'Remover';
+        removeBtn.onclick = () => removerEntradaCatalogo(index);
+
+        item.appendChild(texts);
+        item.appendChild(removeBtn);
+        list.appendChild(item);
+      });
+    }
+
+    // 🔹 NOVO: converte date (dd/MM/yyyy) + time (HH:mm) para UTC com Z, somando 3h
+    function formatarDataHoraUTC(row) {
+      if (!row || !row.date || !row.time) return '';
+
+      const [dia, mes, ano] = row.date.split('/').map(Number);
+      const [hh, mm] = row.time.split(':').map(Number);
+
+      // soma 3h (UTC-3 -> UTC); Date.UTC lida com overflow (24+)
+      const date = new Date(Date.UTC(ano, mes - 1, dia, hh + 3, mm, 0));
+
+      // yyyy-MM-ddTHH:mm:ssZ
+      return date.toISOString().replace('.000Z', 'Z');
+    }
+
+    // usa o helper acima tanto para XLSX quanto para CSV
+    function mapForExport(rows) {
+      return rows.map((row) => ({
+        DataHora: formatarDataHoraUTC(row),
+        Serviço: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observação: row.observacao ?? '',
+        Atuação: sanitizeAtuacao(row.atuacao ?? row.status ?? '')
+      }));
+    }
+
+    function mapearParaExportacaoXLSX(linhas) {
+      return linhas.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Servico: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observacao: row.observacao ?? '',
+        Atuacao: sanitizeAtuacao(row.atuacao ?? row.status ?? '')
+      }));
     }
 
     function mapearParaExportacaoXLSX(linhas) {
@@ -997,54 +1269,35 @@
         return;
       }
 
-      const xlsxDisponivel = await garantirXLSXDisponivel();
-
-      if (window.XLSX && xlsxDisponivel && !window.__xlsxFailed) {
-        const mapped = mapearParaExportacaoXLSX(formattedRows);
-        const worksheet = XLSX.utils.json_to_sheet(mapped, {
-          header: ['DataHora', 'Servico', 'Empresa', 'Observacao', 'Atuacao'],
-          skipHeader: false
-        });
-
-        worksheet['!cols'] = [
-          { wch: 24 },
-          { wch: 18 },
-          { wch: 12 },
-          { wch: 50 },
-          { wch: 10 }
-        ];
-
-        if (worksheet['!ref']) {
-          const range = XLSX.utils.decode_range(worksheet['!ref']);
-          worksheet['!autofilter'] = {
-            ref: XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: range.e.c, r: range.e.r } })
-          };
-        }
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
-
-        const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
-
-        try {
-          XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
-        } catch (error) {
-          const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-          const blob = new Blob([wbout], { type: 'application/octet-stream' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `noc-formatter-${timestamp}.xlsx`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
+      if (!window.XLSX) {
+        alert('Biblioteca XLSX não foi carregada. Tente recarregar a página.');
         return;
       }
 
-      window.__xlsxFailed = true;
-      exportarCSV();
+      const mappedRows = mapForExport(formattedRows);
+      const worksheet = XLSX.utils.json_to_sheet(mappedRows, {
+        header: ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação']
+      });
+
+      worksheet['!cols'] = [
+        { wch: 22 },
+        { wch: 28 },
+        { wch: 28 },
+        { wch: 50 },
+        { wch: 22 }
+      ];
+
+      const range =
+        worksheet['!ref'] ||
+        XLSX.utils.encode_range({ s: { c: 0, r: 0 }, e: { c: 4, r: mappedRows.length } });
+      worksheet['!ref'] = range;
+      worksheet['!autofilter'] = { ref: range };
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+
+      const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
+      XLSX.writeFile(workbook, `noc-formatter-${timestamp}.xlsx`);
     }
 
     function exportarCSV() {
@@ -1060,7 +1313,7 @@
       const data = [
         ['DataHora', 'Serviço', 'Empresa', 'Observação', 'Atuação'],
         ...formattedRows.map((row) => [
-          row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+          formatarDataHoraUTC(row),
           row.service ?? '',
           row.company ?? '',
           row.observacao ?? '',
@@ -1079,7 +1332,9 @@
       document.body.removeChild(link);
       URL.revokeObjectURL(link.href);
 
-      const offlineMessage = window.__xlsxFailed || !window.XLSX ? '\nA biblioteca XLSX não pôde ser carregada; o arquivo foi exportado como CSV.' : '';
+      const offlineMessage = !window.XLSX
+        ? '\nA biblioteca XLSX não pôde ser carregada; o arquivo foi exportado como CSV.'
+        : '';
       alert(`Exportação concluída.${offlineMessage}`);
     }
 
