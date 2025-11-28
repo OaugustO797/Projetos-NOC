@@ -109,19 +109,6 @@
       z-index: 0;
     }
 
-    h1 {
-      font-size: clamp(1.5rem, 2vw + 1rem, 2.5rem);
-      margin: 0;
-      text-align: center;
-      letter-spacing: 0.04em;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: var(--text-muted);
-      margin: 0;
-    }
-
     .wrapper {
       position: relative;
       max-width: 1080px;
@@ -1259,6 +1246,16 @@
         Empresa: row.company ?? '',
         Observacao: row.observacao ?? '',
         Atuacao: sanitizeAtuacao(row.atuacao ?? row.status ?? '')
+      }));
+    }
+
+    function mapearParaExportacaoXLSX(linhas) {
+      return linhas.map((row) => ({
+        DataHora: row.dataHora || (row.date && row.time ? `${row.date}T${row.time}:00Z` : ''),
+        Servico: row.service ?? '',
+        Empresa: row.company ?? '',
+        Observacao: row.observacao ?? '',
+        Atuacao: row.atuacao ?? row.status ?? ''
       }));
     }
 
