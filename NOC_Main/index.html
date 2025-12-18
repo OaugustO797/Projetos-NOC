@@ -327,6 +327,14 @@
       margin-bottom: 0.5rem;
     }
 
+    .turno-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.35rem;
+      align-items: end;
+    }
+
     .catalog-actions {
       display: flex;
       gap: 0.5rem;
@@ -550,6 +558,28 @@
 
       <section class="menu-section">
         <div class="menu-section-header">
+          <h2>Virada de turno</h2>
+          <p>Use a virada automÇütica noite→madrugada ou informe a data na lista para forÇ'ar o dia.</p>
+        </div>
+        <label>
+          <input type="checkbox" id="autoRolloverToggle" />
+          Ativar virada automÇütica (noite ≥ / madrugada ≤)
+        </label>
+        <div class="turno-grid">
+          <div>
+            <label for="nightStartHour">Noite começa às</label>
+            <input id="nightStartHour" type="number" min="0" max="23" step="1" />
+          </div>
+          <div>
+            <label for="dawnEndHour">Madrugada até</label>
+            <input id="dawnEndHour" type="number" min="0" max="23" step="1" />
+          </div>
+        </div>
+        <p class="menu-note">Linhas com data (dd/MM/yyyy) sempre fecham o dia anterior e iniciam o novo.</p>
+      </section>
+
+      <section class="menu-section">
+        <div class="menu-section-header">
           <h2>Catálogo</h2>
           <p>Cadastre palavras-chave para forçar a identificação de serviços e outros itens.</p>
         </div>
@@ -641,6 +671,7 @@
       /^(\d{1,2}[:h]\d{2}h?)\s*[-–]\s*([A-Za-z\d-]{4,})\s*[-–]\s*([A-Za-z]{3}(?:\s*,\s*[A-Za-z]{3})*)\s*[-–]\s*(.+)$/;
     const STORAGE_KEY = 'nocFormatterRules';
     const CATALOG_KEY = 'nocFormatterCatalog';
+    const SETTINGS_KEY = 'nocFormatterSettings';
     const defaultRules = [
       { match: 'Sem atuacao', value: 'NÃO' },
       { match: 'Servico em execucao', value: 'NÃO' },
@@ -649,6 +680,12 @@
       { match: 'Necessario a execucao', value: 'SIM' },
       { match: 'Necessario a execucao do servico', value: 'SIM' }
     ];
+    const defaultSettings = {
+      autoRollover: true,
+      nightStartHour: 18,
+      dawnEndHour: 6
+    };
+    let settings = { ...defaultSettings };
     let formattedRows = [];
     let userRules = [];
     let catalogEntries = [];
@@ -661,6 +698,9 @@
       carregarCatalogo();
       renderizarCatalogo();
       atualizarBotoesTema();
+      carregarConfiguracoes();
+      aplicarConfiguracoesNaUI();
+      registrarListenersConfiguracoes();
       ativarAba('config');
     });
 
@@ -719,49 +759,145 @@
       aplicarTema(saved);
     }
 
+    function validarHora(valor, fallback) {
+      const n = Number(valor);
+      if (Number.isNaN(n)) return fallback;
+      return Math.min(23, Math.max(0, Math.floor(n)));
+    }
+
+    function carregarConfiguracoes() {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (!saved) {
+        settings = { ...defaultSettings };
+        return;
+      }
+      try {
+        const parsed = JSON.parse(saved);
+        settings = {
+          ...defaultSettings,
+          ...(parsed || {})
+        };
+        settings.nightStartHour = validarHora(settings.nightStartHour, defaultSettings.nightStartHour);
+        settings.dawnEndHour = validarHora(settings.dawnEndHour, defaultSettings.dawnEndHour);
+        settings.autoRollover = Boolean(settings.autoRollover);
+      } catch (err) {
+        settings = { ...defaultSettings };
+      }
+    }
+
+    function salvarConfiguracoes() {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    function aplicarConfiguracoesNaUI() {
+      const autoToggle = document.getElementById('autoRolloverToggle');
+      const nightInput = document.getElementById('nightStartHour');
+      const dawnInput = document.getElementById('dawnEndHour');
+      if (!autoToggle || !nightInput || !dawnInput) return;
+
+      autoToggle.checked = Boolean(settings.autoRollover);
+      nightInput.value = settings.nightStartHour;
+      dawnInput.value = settings.dawnEndHour;
+    }
+
+    function atualizarConfiguracoes(parcial) {
+      settings = { ...settings, ...parcial };
+      settings.nightStartHour = validarHora(settings.nightStartHour, defaultSettings.nightStartHour);
+      settings.dawnEndHour = validarHora(settings.dawnEndHour, defaultSettings.dawnEndHour);
+      settings.autoRollover = Boolean(settings.autoRollover);
+      salvarConfiguracoes();
+    }
+
+    function registrarListenersConfiguracoes() {
+      const autoToggle = document.getElementById('autoRolloverToggle');
+      const nightInput = document.getElementById('nightStartHour');
+      const dawnInput = document.getElementById('dawnEndHour');
+      if (!autoToggle || !nightInput || !dawnInput) return;
+
+      autoToggle.addEventListener('change', (e) => {
+        atualizarConfiguracoes({ autoRollover: e.target.checked });
+      });
+
+      nightInput.addEventListener('change', (e) => {
+        atualizarConfiguracoes({ nightStartHour: e.target.value });
+        aplicarConfiguracoesNaUI();
+      });
+
+      dawnInput.addEventListener('change', (e) => {
+        atualizarConfiguracoes({ dawnEndHour: e.target.value });
+        aplicarConfiguracoesNaUI();
+      });
+    }
+
     function formatar() {
       const input = document.getElementById('in').value.split(/\r?\n/);
       const output = [];
       let currentDate = '';
       let lastTimeMinutes = null;
       let lastHour = null;
+      const dateOrder = [];
+      const eventsByDate = {};
       formattedRows = [];
+
+      const config = {
+        autoRollover: Boolean(settings.autoRollover),
+        nightStartHour: validarHora(settings.nightStartHour, defaultSettings.nightStartHour),
+        dawnEndHour: validarHora(settings.dawnEndHour, defaultSettings.dawnEndHour)
+      };
+
+      function registrarDataSeNecessario(dateStr) {
+        const key = dateStr || '';
+        if (!eventsByDate[key]) {
+          eventsByDate[key] = [];
+          dateOrder.push(key);
+        }
+      }
+
+      function checarVirada(hour, minutes) {
+        if (!config.autoRollover || !currentDate || lastTimeMinutes === null) return;
+        const currentMinutes = hour * 60 + minutes;
+        if (
+          currentMinutes < lastTimeMinutes &&
+          lastHour !== null &&
+          lastHour >= config.nightStartHour &&
+          hour <= config.dawnEndHour
+        ) {
+          currentDate = incDate(currentDate);
+          registrarDataSeNecessario(currentDate);
+          lastTimeMinutes = null;
+          lastHour = null;
+        }
+      }
 
       function registrarEvento({ time, service, companies, status }) {
         const [hour, minutes] = time.split(':').map(Number);
-        const currentMinutes = hour * 60 + minutes;
-
-        if (currentDate && lastTimeMinutes !== null) {
-          if (currentMinutes < lastTimeMinutes && lastHour !== null && lastHour >= 18 && hour <= 6) {
-            currentDate = incDate(currentDate);
-            output.push(currentDate);
-            lastTimeMinutes = null;
-            lastHour = null;
-          }
+        if (Number.isFinite(hour) && Number.isFinite(minutes)) {
+          checarVirada(hour, minutes);
+          const totalMinutes = hour * 60 + minutes;
+          registrarDataSeNecessario(currentDate);
+          eventsByDate[currentDate].push({
+            time,
+            service,
+            companies,
+            status,
+            hour,
+            minutes,
+            totalMinutes
+          });
+          lastTimeMinutes = totalMinutes;
+          lastHour = hour;
+        } else {
+          registrarDataSeNecessario(currentDate);
+          eventsByDate[currentDate].push({
+            time,
+            service,
+            companies,
+            status,
+            hour: null,
+            minutes: null,
+            totalMinutes: Number.MAX_SAFE_INTEGER
+          });
         }
-
-        const observacao = applyRulesToText('');
-        const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
-
-        for (const company of companies.length ? companies : ['']) {
-          const formattedCompany = company ? applyRulesToText(company).toUpperCase() : '';
-          output.push(`${time} - ${service} - ${formattedCompany} - ${status}`);
-          if (currentDate) {
-            formattedRows.push({
-              date: currentDate,
-              time,
-              dataHora,
-              service,
-              company: formattedCompany,
-              observacao,
-              atuacao: status,
-              status
-            });
-          }
-        }
-
-        lastTimeMinutes = currentMinutes;
-        lastHour = hour;
       }
 
       for (const rawLine of input) {
@@ -774,7 +910,7 @@
           currentDate = line;
           lastTimeMinutes = null;
           lastHour = null;
-          output.push(line);
+          registrarDataSeNecessario(currentDate);
           continue;
         }
 
@@ -786,16 +922,6 @@
           const rawStatus = statusGroup.trim();
           const time = normalizeTime(rawTime);
           const [hour, minutes] = time.split(':').map(Number);
-          const currentMinutes = hour * 60 + minutes;
-
-          if (currentDate && lastTimeMinutes !== null) {
-            if (currentMinutes < lastTimeMinutes && lastHour !== null && lastHour >= 18 && hour <= 6) {
-              currentDate = incDate(currentDate);
-              output.push(currentDate);
-              lastTimeMinutes = null;
-              lastHour = null;
-            }
-          }
 
           const serviceCatalogMatch = encontrarServicoNoCatalogo(rawService);
           const serviceBase = serviceCatalogMatch?.text || rawService;
@@ -805,21 +931,59 @@
             .map((c) => applyRulesToText(c).toUpperCase())
             .filter(Boolean);
           const status = normalizeStatus(rawStatus);
-          const dataHora = currentDate && time ? `${currentDate}T${time}:00Z` : '';
-          const observacao = applyRulesToText('');
           const atuacao = status || '';
 
-          registrarEvento({ time, service, companies, status: atuacao });
+          registrarEvento({
+            time,
+            service,
+            companies,
+            status: atuacao
+          });
           continue;
         }
 
         const catalogClassification = tentarClassificarLinhaPorCatalogo(line);
         if (catalogClassification) {
-          registrarEvento(catalogClassification);
+          const [classHour, classMinutes] = catalogClassification.time.split(':').map(Number);
+          registrarEvento({
+            ...catalogClassification,
+            companies: catalogClassification.companies || [],
+            status: catalogClassification.status || '',
+            time: catalogClassification.time || '',
+            hour: classHour,
+            minutes: classMinutes
+          });
           continue;
         }
 
         output.push(applyRulesToText(line));
+      }
+
+      // Monta a saÇðda ordenando por horÇürio dentro de cada data detectada
+      for (const dateKey of dateOrder) {
+        if (dateKey) {
+          output.push(dateKey);
+        }
+        const eventos = (eventsByDate[dateKey] || []).slice().sort((a, b) => a.totalMinutes - b.totalMinutes);
+        for (const ev of eventos) {
+          const companies = ev.companies && ev.companies.length ? ev.companies : [''];
+          for (const company of companies) {
+            const formattedCompany = company ? applyRulesToText(company).toUpperCase() : '';
+            output.push(`${ev.time} - ${ev.service} - ${formattedCompany} - ${ev.status}`);
+            if (dateKey) {
+              formattedRows.push({
+                date: dateKey,
+                time: ev.time,
+                dataHora: `${dateKey}T${ev.time}:00Z`,
+                service: ev.service,
+                company: formattedCompany,
+                observacao: applyRulesToText(''),
+                atuacao: ev.status,
+                status: ev.status
+              });
+            }
+          }
+        }
       }
 
       document.getElementById('out').textContent = output.join('\n');
